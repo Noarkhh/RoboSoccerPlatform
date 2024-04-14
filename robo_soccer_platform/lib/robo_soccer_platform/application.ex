@@ -9,10 +9,9 @@ defmodule RoboSoccerPlatform.Application do
   def start(_type, _args) do
     children = [
       RoboSoccerPlatformWeb.Telemetry,
-      {DNSCluster, query: Application.get_env(:robo_soccer_platform, :dns_cluster_query) || :ignore},
+      {DNSCluster,
+       query: Application.get_env(:robo_soccer_platform, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: RoboSoccerPlatform.PubSub},
-      # Start the Finch HTTP client for sending emails
-      {Finch, name: RoboSoccerPlatform.Finch},
       # Start a worker by calling: RoboSoccerPlatform.Worker.start_link(arg)
       # {RoboSoccerPlatform.Worker, arg},
       # Start to serve requests, typically the last entry
