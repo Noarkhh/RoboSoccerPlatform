@@ -17,7 +17,8 @@ defmodule RoboSoccerPlatformWeb.Router do
   scope "/", RoboSoccerPlatformWeb do
     pipe_through(:browser)
 
-    get("/", PageController, :home)
+    get "/", PageController, :home
+    live "/player", Player
   end
 
   # Other scopes may use custom stacks.
