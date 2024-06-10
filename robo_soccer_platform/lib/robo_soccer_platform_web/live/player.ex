@@ -1,11 +1,7 @@
 defmodule RoboSoccerPlatformWeb.Player do
   use RoboSoccerPlatformWeb, :live_view
 
-  @game_start "game_start"
-
   def mount(_params, _session, socket) do
-    RoboSoccerPlatformWeb.Endpoint.subscribe(@game_start)
-
     {:ok, assign(socket, form: %{"errors" => []})}
   end
 
@@ -69,18 +65,17 @@ defmodule RoboSoccerPlatformWeb.Player do
     form = assign_form_errors(socket.assigns.form)
 
     if form["errors"] == [] do
-      form = Map.put(form, "team", team)
-      # TODO - move to another view based on team and save data on client side
-      IO.inspect(form)
-      {:noreply, assign(socket, form: form)}
+      socket = assign(socket, form: form)
+
+      path =
+        "/player/steering?" <>
+          URI.encode_query(team: team, username: socket.assigns.form["username"])
+
+      {:noreply, push_navigate(socket, to: path)}
     else
       {:noreply, assign(socket, form: form)}
     end
   end
-
-  # def handle_info(%{topic: @game_start}, socket) do
-  #   {:noreply, redirect(socket, to: "/player/#{socket.assigns.uuid}/game")}
-  # end
 
   defp assign_form_errors(form) do
     errors =
