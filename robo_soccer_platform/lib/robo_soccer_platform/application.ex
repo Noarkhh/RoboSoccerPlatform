@@ -15,7 +15,9 @@ defmodule RoboSoccerPlatform.Application do
       # Start a worker by calling: RoboSoccerPlatform.Worker.start_link(arg)
       # {RoboSoccerPlatform.Worker, arg},
       # Start to serve requests, typically the last entry
-      RoboSoccerPlatformWeb.Endpoint
+      RoboSoccerPlatformWeb.Endpoint,
+      {RoboSoccerPlatform.PlayerInputAggregator,
+       Application.get_env(:robo_soccer_platform, RoboSoccerPlatform.PlayerInputAggregator)}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

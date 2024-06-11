@@ -7,12 +7,16 @@
 # General application configuration
 import Config
 
+config :robo_soccer_platform, RoboSoccerPlatform.PlayerInputAggregator,
+  aggregation_interval_ms: 2000,
+  aggregation_function_name: :median
+
 config :robo_soccer_platform,
   generators: [timestamp_type: :utc_datetime]
 
 # Configures the endpoint
 config :robo_soccer_platform, RoboSoccerPlatformWeb.Endpoint,
-  url: [host: "localhost"],
+  url: [host: "0.0.0.0"],
   adapter: Bandit.PhoenixAdapter,
   render_errors: [
     formats: [html: RoboSoccerPlatformWeb.ErrorHTML, json: RoboSoccerPlatformWeb.ErrorJSON],

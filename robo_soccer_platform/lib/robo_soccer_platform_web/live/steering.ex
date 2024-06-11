@@ -1,6 +1,8 @@
 defmodule RoboSoccerPlatformWeb.Player.Steering do
   use RoboSoccerPlatformWeb, :live_view
 
+  alias RoboSoccerPlatform.Player
+
   @game_start "game_start"
   @controller "controller"
 
@@ -11,17 +13,17 @@ defmodule RoboSoccerPlatformWeb.Player.Steering do
   end
 
   def handle_params(params, _uri, socket) do
+    player = %Player{
+      id: params["id"],
+      team: params["team"],
+      username: params["username"]
+    }
+
     socket =
       socket
-      |> assign(id: params["id"])
-      |> assign(team: params["team"])
-      |> assign(username: params["username"])
+      |> assign(player: player)
 
-    RoboSoccerPlatformWeb.Endpoint.broadcast_from(self(), @controller, "register", %{
-      id: socket.assigns.id,
-      team: socket.assigns.team,
-      username: socket.assigns.username
-    })
+    RoboSoccerPlatformWeb.Endpoint.broadcast_from(self(), @controller, "register", player)
 
     {:noreply, socket}
   end
@@ -39,11 +41,14 @@ defmodule RoboSoccerPlatformWeb.Player.Steering do
     """
   end
 
-  def handle_event("update_joystick_position", %{"x" => x, "y" => y}, socket) do
+  def handle_event("update_joystick_position", %{"x" => x_str, "y" => y_str}, socket) do
+    {x, ""} = Integer.parse(x_str)
+    {y, ""} = Integer.parse(y_str)
+
     RoboSoccerPlatformWeb.Endpoint.broadcast_from(self(), @controller, "joystick_position", %{
       x: x,
       y: y,
-      id: socket.assigns.id
+      id: socket.assigns.player.id
     })
 
     {:noreply, socket}

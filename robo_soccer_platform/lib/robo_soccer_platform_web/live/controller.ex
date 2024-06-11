@@ -1,6 +1,8 @@
 defmodule RoboSoccerPlatformWeb.Controller do
   use RoboSoccerPlatformWeb, :live_view
 
+  alias RoboSoccerPlatform.Player
+
   @game_start "game_start"
   @controller "controller"
 
@@ -46,7 +48,7 @@ defmodule RoboSoccerPlatformWeb.Controller do
         %{
           topic: @controller,
           event: "register",
-          payload: %{id: id, team: team, username: username}
+          payload: %Player{id: id, team: team, username: username}
         },
         socket
       ) do
