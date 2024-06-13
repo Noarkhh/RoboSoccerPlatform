@@ -1,4 +1,5 @@
-from adafruit_servokit import ServoKit, ContinuousServo
+from adafruit_servokit import ServoKit, ContinuousServo, Servo
+from typing import Tuple
 import time
 import socket
 import struct
@@ -7,11 +8,11 @@ i2c_address = 0x40
 steering_channel = 0
 throttle_channel = 1
 server_ip = "192.168.43.204"
-server_port = 60606
+server_port = 20000
 
 def setup():
     kit = ServoKit(channels=16, address=i2c_address)
-    steering_motor = kit.continuous_servo[steering_channel]
+    steering_motor = kit.servo[steering_channel]
     throttle_motor = kit.continuous_servo[throttle_channel]
     print("Motors initialized")
     
@@ -20,9 +21,9 @@ def setup():
         print("Socket connected")
         loop(sock, steering_motor, throttle_motor)
 
-def loop(sock: socket, steering_motor: ContinuousServo, throttle_motor: ContinuousServo) -> None:
+def loop(sock: socket, steering_servo: Servo, throttle_motor: ContinuousServo) -> None:
     while True:
-        receive_command(sock, steering_motor, throttle_motor)
+        receive_instruction(sock, steering_servo, throttle_motor)
 
 def connect_socket(sock: socket, timeout: int) -> None:
     try:
@@ -32,20 +33,24 @@ def connect_socket(sock: socket, timeout: int) -> None:
         time.sleep(timeout)
         connect_socket(sock, timeout * 2)
 
-def receive_command(sock: socket, steering_motor: ContinuousServo, throttle_motor: ContinuousServo) -> None:
+def receive_instruction(sock: socket, steering_servo: Servo, throttle_motor: ContinuousServo) -> None:
     command_binary = sock.recv(16)
     
-    steering_command, throttle_command = parse_instruction(command_binary)
+    steering_servo_angle, throttle_motor_throttle = parse_instruction(command_binary)
 
-    steering_motor.throttle = steering_command
-    throttle_motor.throttle = throttle_command
+    steering_servo.angle = steering_servo_angle
+    throttle_motor.throttle = throttle_motor_throttle
 
-def parse_instruction(instruction_binary):
+def parse_instruction(instruction_binary: bytes) -> Tuple[float, float]:
     steering_instruction, throttle_instruction = struct.unpack(">dd", instruction_binary)
-    steering_instruction = min(1.0, max(-1.0, steering_instruction))
-    throttle_instruction = min(1.0, max(-1.0, throttle_instruction))
-    print(f"steer: {steering_instruction}, throttle: {throttle_instruction}")
-    return steering_instruction, throttle_instruction
+
+    steering_servo_angle = -clip(steering_instruction) * 180 - 90
+    throttle_motor_throttle = clip(throttle_instruction)
+
+    return steering_servo_angle, throttle_motor_throttle
+
+def clip(value: float, lower_bound: float = -1.0, upper_bound: float = 1.0) -> float:
+    return min(max(value, lower_bound), upper_bound)
 
 if __name__ == "__main__":
     setup()
