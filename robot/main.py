@@ -44,12 +44,13 @@ def receive_instruction(sock: socket, steering_servo: Servo, throttle_motor: Con
 def parse_instruction(instruction_binary: bytes) -> Tuple[float, float]:
     steering_instruction, throttle_instruction = struct.unpack(">dd", instruction_binary)
 
-    steering_servo_angle = -clip(steering_instruction) * 180 - 90
-    throttle_motor_throttle = clip(throttle_instruction)
+    steering_servo_angle = clip((-steering_instruction + 1.0) * 90.0, 0.0, 180.0)
+    throttle_motor_throttle = clip(throttle_instruction, -1.0, 1.0)
+    print(steering_servo_angle)
 
     return steering_servo_angle, throttle_motor_throttle
 
-def clip(value: float, lower_bound: float = -1.0, upper_bound: float = 1.0) -> float:
+def clip(value: float, lower_bound: float, upper_bound: float) -> float:
     return min(max(value, lower_bound), upper_bound)
 
 if __name__ == "__main__":
