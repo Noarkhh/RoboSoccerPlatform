@@ -2,7 +2,12 @@ defmodule RoboSoccerPlatformWeb.Player do
   use RoboSoccerPlatformWeb, :live_view
 
   def mount(_params, _session, socket) do
-    {:ok, assign(socket, form: %{"errors" => []})}
+    socket =
+      socket
+      |> assign(id: UUID.uuid4())
+      |> assign(form: %{"errors" => []})
+
+    {:ok, socket}
   end
 
   def render(assigns) do
@@ -69,7 +74,11 @@ defmodule RoboSoccerPlatformWeb.Player do
 
       path =
         "/player/steering?" <>
-          URI.encode_query(team: team, username: socket.assigns.form["username"])
+          URI.encode_query(
+            team: team,
+            username: socket.assigns.form["username"],
+            id: socket.assigns.id
+          )
 
       {:noreply, push_navigate(socket, to: path)}
     else
