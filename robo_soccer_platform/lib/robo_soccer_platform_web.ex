@@ -52,6 +52,7 @@ defmodule RoboSoccerPlatformWeb do
   def live_view do
     quote do
       use Phoenix.LiveView,
+        log: false,
         layout: {RoboSoccerPlatformWeb.Layouts, :app}
 
       unquote(html_helpers())

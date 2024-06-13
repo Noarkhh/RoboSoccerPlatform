@@ -8,10 +8,11 @@ defmodule RoboSoccerPlatform.RobotConnection do
             team: RoboSoccerPlatform.team(),
             local_port: :inet.port_number(),
             robot_ip_address: :inet.ip4_address(),
+            listening_socket: :gen_tcp.socket(),
             socket: :gen_tcp.socket() | nil
           }
 
-    @enforce_keys [:team, :local_port, :robot_ip_address]
+    @enforce_keys [:team, :local_port, :robot_ip_address, :listening_socket]
     defstruct @enforce_keys ++
                 [
                   socket: nil
@@ -31,10 +32,13 @@ defmodule RoboSoccerPlatform.RobotConnection do
 
   @impl true
   def init({team, local_port, robot_ip_address}) do
+    {:ok, listening_socket} = :gen_tcp.listen(local_port, mode: :binary, reuseaddr: true)
+
     state = %State{
       team: team,
       local_port: local_port,
-      robot_ip_address: robot_ip_address
+      robot_ip_address: robot_ip_address,
+      listening_socket: listening_socket
     }
 
     {:ok, state, {:continue, :initialize_connection}}
@@ -42,14 +46,13 @@ defmodule RoboSoccerPlatform.RobotConnection do
 
   @impl true
   def handle_continue(:initialize_connection, state) do
-    {:ok, listening_socket} = :gen_tcp.listen(state.local_port, mode: :binary, reuseaddr: true)
-    {:ok, {socket_address, socket_port}} = :inet.sockname(listening_socket)
+    {:ok, {socket_address, socket_port}} = :inet.sockname(state.listening_socket)
 
     Logger.info(
-      "Connection for robot #{state.team} listening on #{:inet.ntoa(socket_address)}:#{socket_port}"
+      "Connection process listening for #{state.team} robot on #{:inet.ntoa(socket_address)}:#{socket_port}"
     )
 
-    {:ok, connected_socket} = :gen_tcp.accept(listening_socket)
+    {:ok, connected_socket} = :gen_tcp.accept(state.listening_socket)
     {:ok, {peer_ip_address, _peer_port}} = :inet.peername(connected_socket)
 
     if peer_ip_address != state.robot_ip_address do
@@ -79,6 +82,7 @@ defmodule RoboSoccerPlatform.RobotConnection do
         {:noreply, state}
 
       {:error, :closed} ->
+        Logger.warning("Connection with #{state.team} robot severed, retrying")
         {:noreply, state, {:continue, :initialize_connection}}
     end
   end
@@ -95,6 +99,7 @@ defmodule RoboSoccerPlatform.RobotConnection do
 
   @impl true
   def handle_info({:tcp_closed, _socket}, state) do
+    Logger.warning("Connection with #{state.team} robot severed, retrying")
     {:noreply, state, {:continue, :initialize_connection}}
   end
 
