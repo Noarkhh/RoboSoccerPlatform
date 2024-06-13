@@ -87,11 +87,6 @@ defmodule RoboSoccerPlatform.PlayerInputAggregator do
     |> Enum.group_by(& &1.player.team)
     |> Enum.each(fn {team, player_inputs} ->
       instruction = aggregate_player_inputs(player_inputs, state.aggregation_function)
-
-      Logger.info(
-        "Sending instruction #{inspect(instruction)} to RobotConnection of #{team} robot #{inspect(state.robot_connections[team])}"
-      )
-
       RobotConnection.send_instruction(state.robot_connections[team], instruction)
     end)
 

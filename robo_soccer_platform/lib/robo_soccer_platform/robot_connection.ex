@@ -75,11 +75,7 @@ defmodule RoboSoccerPlatform.RobotConnection do
   end
 
   @impl true
-  def handle_cast(
-        {:send_instruction, %{x: x, y: y} = instruction},
-        %State{phase: :connected} = state
-      ) do
-    Logger.info("Sending instruction #{inspect(instruction)} to #{state.team} robot")
+  def handle_cast({:send_instruction, %{x: x, y: y}}, %State{phase: :connected} = state) do
     packet = <<x::float, y::float>>
 
     case :gen_tcp.send(state.socket, packet) do
