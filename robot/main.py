@@ -35,12 +35,17 @@ def connect_socket(sock: socket, timeout: int) -> None:
 def receive_command(sock: socket, steering_motor: ContinuousServo, throttle_motor: ContinuousServo) -> None:
     command_binary = sock.recv(16)
     
-    steering_command, throttle_command = struct.unpack(">dd", command_binary)
-
-    print(f"steer: {steering_command}, throttle: {throttle_command}")
+    steering_command, throttle_command = parse_instruction(command_binary)
 
     steering_motor.throttle = steering_command
     throttle_motor.throttle = throttle_command
+
+def parse_instruction(instruction_binary):
+    steering_instruction, throttle_instruction = struct.unpack(">dd", instruction_binary)
+    steering_instruction = min(1.0, max(-1.0, steering_instruction))
+    throttle_instruction = min(1.0, max(-1.0, throttle_instruction))
+    print(f"steer: {steering_instruction}, throttle: {throttle_instruction}")
+    return steering_instruction, throttle_instruction
 
 if __name__ == "__main__":
     setup()
