@@ -18,10 +18,10 @@ defmodule RoboSoccerPlatform.RobotConnection do
                 ]
   end
 
-  @spec start_link(RoboSoccerPlatform.team(), :inet.port_number(), :inet.ip4_address()) ::
+  @spec start(RoboSoccerPlatform.team(), :inet.port_number(), :inet.ip4_address()) ::
           GenServer.on_start()
-  def start_link(team, local_port, robot_ip_address) do
-    GenServer.start_link(__MODULE__, {team, local_port, robot_ip_address})
+  def start(team, local_port, robot_ip_address) do
+    GenServer.start(__MODULE__, {team, local_port, robot_ip_address})
   end
 
   @spec send_instruction(pid(), %{x: float(), y: float()}) :: :ok

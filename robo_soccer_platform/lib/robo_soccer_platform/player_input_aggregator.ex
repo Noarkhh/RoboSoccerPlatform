@@ -67,7 +67,7 @@ defmodule RoboSoccerPlatform.PlayerInputAggregator do
         %{topic: @controller, event: "register", payload: player},
         %{game_started: false} = state
       ) do
-    player_inputs = Map.put(state.player_inputs, player.id, %{player: player, x: 0, y: 0})
+    player_inputs = Map.put(state.player_inputs, player.id, %{player: player, x: 0.0, y: 0.0})
     {:noreply, %{state | player_inputs: player_inputs}}
   end
 
@@ -116,7 +116,7 @@ defmodule RoboSoccerPlatform.PlayerInputAggregator do
       opts
       |> Keyword.fetch!(:robot_configs)
       |> Enum.map(fn {team, %{robot_ip_address: ip_address, local_port: local_port}} ->
-        case RobotConnection.start_link(team, local_port, ip_address) do
+        case RobotConnection.start(team, local_port, ip_address) do
           {:ok, pid} ->
             Logger.info("Started RobotConnection for team #{team} with pid #{inspect(pid)}")
             {team, pid}
