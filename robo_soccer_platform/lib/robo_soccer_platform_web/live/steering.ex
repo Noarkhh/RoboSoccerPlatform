@@ -46,8 +46,8 @@ defmodule RoboSoccerPlatformWeb.Player.Steering do
     {y, ""} = Integer.parse(y_str)
 
     RoboSoccerPlatformWeb.Endpoint.broadcast_from(self(), @controller, "joystick_position", %{
-      x: x,
-      y: y,
+      x: x / 100,
+      y: y / 100,
       id: socket.assigns.player.id
     })
 

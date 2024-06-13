@@ -7,11 +7,13 @@ defmodule RoboSoccerPlatform do
   if it comes from the database, an external API or others.
   """
 
+  @type team :: String.t()
+
   defmodule Player do
     @type t :: %__MODULE__{
             id: String.t(),
             username: String.t(),
-            team: atom()
+            team: RoboSoccerPlatform.team()
           }
 
     @enforce_keys [:id, :username, :team]
