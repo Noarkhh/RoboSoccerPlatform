@@ -10,47 +10,6 @@ throttle_channel = 1
 server_ip = "192.168.43.204"
 server_port = 20000
 
-def setup():
-    kit = ServoKit(channels=16, address=i2c_address)
-    print("ServoKit initialized")
-    steering_servo = kit.servo[steering_channel]
-    print("Steering servo initialized")
-    throttle_motor = kit.continuous_servo[throttle_channel]
-    print("Throttle motor initialized")
-    
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-        connect_socket(sock)
-        loop(sock, steering_servo, throttle_motor)
-
-def loop(sock: socket, steering_servo: Servo, throttle_motor: ContinuousServo) -> None:
-    while True:
-        receive_instruction(sock, steering_servo, throttle_motor)
-
-def connect_socket(sock: socket) -> None:
-    timeout = 2
-    while True:
-        try:
-            sock.connect((server_ip, server_port))
-            print("Connection established")
-            return
-        except ConnectionRefusedError:
-            print(f"Connection refused, retrying in {timeout} s...")
-            time.sleep(timeout)
-            timeout = min(timeout + 2, 20)
-
-
-def receive_instruction(sock: socket, steering_servo: Servo, throttle_motor: ContinuousServo) -> None:
-    command_binary = sock.recv(16)
-    if command_binary == b"":
-        print("Connection closed, retrying")
-        connect_socket(sock)
-        return
-    
-    steering_servo_angle, throttle_motor_throttle = parse_instruction(command_binary)
-
-    steering_servo.angle = steering_servo_angle
-    throttle_motor.throttle = throttle_motor_throttle
-
 def parse_instruction(instruction_binary: bytes) -> Tuple[float, float]:
     steering_instruction, throttle_instruction = struct.unpack(">dd", instruction_binary)
 
@@ -63,5 +22,57 @@ def parse_instruction(instruction_binary: bytes) -> Tuple[float, float]:
 def clip(value: float, lower_bound: float, upper_bound: float) -> float:
     return min(max(value, lower_bound), upper_bound)
 
+class Robot:
+    sock: socket
+    steering_servo: Servo
+    throttle_motor: ContinuousServo
+
+    def __init__(self) -> None:
+        self.setup()
+        self.loop()
+
+    def setup(self):
+        kit = ServoKit(channels=16, address=i2c_address)
+        print("ServoKit initialized")
+        self.steering_servo = kit.servo[steering_channel]
+        print("Steering servo initialized")
+        self.throttle_motor = kit.continuous_servo[throttle_channel]
+        print("Throttle motor initialized")
+        
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.connect_socket()
+
+    def loop(self) -> None:
+        while True:
+            self.receive_instruction()
+
+    def connect_socket(self) -> None:
+        timeout = 2
+        while True:
+            try:
+                self.sock.connect((server_ip, server_port))
+                print("Connection established")
+                return
+            except ConnectionRefusedError:
+                print(f"Connection refused, retrying in {timeout} s...")
+                time.sleep(timeout)
+                timeout = min(timeout + 2, 20)
+
+
+    def receive_instruction(self) -> None:
+        command_binary = self.sock.recv(16)
+        if command_binary == b"":
+            print("Connection closed, retrying")
+            socket.close(self.sock)
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.connect_socket()
+            return
+        
+        steering_servo_angle, throttle_motor_throttle = parse_instruction(command_binary)
+
+        self.steering_servo.angle = steering_servo_angle
+        self.throttle_motor.throttle = throttle_motor_throttle
+
+
 if __name__ == "__main__":
-    setup()
+    Robot()
