@@ -39,15 +39,15 @@ class Robot:
         self.throttle_motor = kit.continuous_servo[throttle_channel]
         print("Throttle motor initialized")
         
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.connect_socket()
+        self.establish_connection()
 
     def loop(self) -> None:
         while True:
             self.receive_instruction()
 
-    def connect_socket(self) -> None:
+    def establish_connection(self) -> None:
         timeout = 2
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         while True:
             try:
                 self.sock.connect((server_ip, server_port))
@@ -63,9 +63,8 @@ class Robot:
         command_binary = self.sock.recv(16)
         if command_binary == b"":
             print("Connection closed, retrying")
-            socket.close(self.sock)
-            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.connect_socket()
+            self.sock.close()
+            self.establish_connection()
             return
         
         steering_servo_angle, throttle_motor_throttle = parse_instruction(command_binary)
