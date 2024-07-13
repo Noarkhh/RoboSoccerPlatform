@@ -1,6 +1,8 @@
 defmodule RoboSoccerPlatformWeb.Player do
   use RoboSoccerPlatformWeb, :live_view
 
+  import RoboSoccerPlatformWeb.Player.Assigns
+
   def mount(_params, _session, socket) do
     socket =
       socket
@@ -84,16 +86,5 @@ defmodule RoboSoccerPlatformWeb.Player do
     else
       {:noreply, assign(socket, form: form)}
     end
-  end
-
-  defp assign_form_errors(form) do
-    errors =
-      if Map.get(form, "username", "") == "" do
-        ["Przed dołączeniem do drużyny podaj swoją nazwę"]
-      else
-        []
-      end
-
-    Map.put(form, "errors", errors)
   end
 end
