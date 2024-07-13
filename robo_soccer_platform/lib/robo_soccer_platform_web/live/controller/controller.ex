@@ -1,6 +1,8 @@
 defmodule RoboSoccerPlatformWeb.Controller do
   use RoboSoccerPlatformWeb, :live_view
 
+  import RoboSoccerPlatformWeb.Controller.Assigns
+
   @game_start "game_start"
   @controller "controller"
 
@@ -11,27 +13,50 @@ defmodule RoboSoccerPlatformWeb.Controller do
       socket
       |> assign(game_started: false)
       |> assign(players: %{})
+      |> assign(green_team: [])
+      |> assign(red_team: [])
 
     {:ok, socket}
   end
 
   def render(assigns) do
+    assigns =
+      assigns
+      |> assign_red_team()
+      |> assign_green_team()
+
     ~H"""
-    <div class="flex h-[80vh] items-center">
-      <.button
-        :if={not @game_started}
-        phx-click="start_game"
-        class="h-[40vh] bg-light-green w-full !text-black !text-4xl"
-      >
-        START GAME
-      </.button>
-      <%!-- just for debugging purposes - might delete later --%>
-      <div class="flex flex-col">
-        <div :for={{_player_id, player} <- @players}>
-          USERNAME: <%= player.username %> TEAM: <%= player.team %> X: <%= player[:x] %>, Y: <%= player[
-            :y
-          ] %>
+    <div class="flex flex-col h-[80vh] gap-8">
+      <div class="flex flex-1" :if={not @game_started}>
+        <div class="flex flex-col flex-1">
+          <div class="text-center rounded-tl-3xl bg-light-orange p-2">
+            druzyna czerwona
+          </div>
+          <div class="flex flex-col flex-1 rounded-bl-3xl bg-light-red px-16 py-8 gap-5">
+            <div class="text-center bg-sky-blue" :for={player <- @red_team}>
+              <%= player.username %>
+            </div>
+          </div>
         </div>
+        <div class="flex flex-col flex-1">
+          <div class="text-center rounded-tr-3xl bg-light-orange p-2">
+            druzyna zielona
+          </div>
+          <div class="flex flex-col flex-1 rounded-br-3xl bg-light-green px-16 py-8 gap-5">
+            <div class="text-center bg-sky-blue" :for={player <- @green_team}>
+              <%= player.username %>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="flex justify-center">
+        <.button
+          :if={not @game_started}
+          phx-click="start_game"
+          class="bg-white !text-black !text-4xl"
+        >
+          START
+        </.button>
       </div>
     </div>
     """
