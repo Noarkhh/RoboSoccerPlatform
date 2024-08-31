@@ -17,10 +17,6 @@ defmodule RoboSoccerPlatformWeb.Controller do
     |> then(&{:ok, &1})
   end
 
-  def handle_params(_params, _uri, socket) do
-    {:noreply, socket}
-  end
-
   def render(assigns) do
     assigns =
       assigns
@@ -81,8 +77,8 @@ defmodule RoboSoccerPlatformWeb.Controller do
   defp before_game_view(assigns) do
     ~H"""
     <div class="flex flex-1" >
-      <.team players={@red_team} color={:red} class="rounded-tl-3xl"/>
-      <.team players={@green_team} color={:green} class="rounded-tr-3xl"/>
+      <.team players={@red_team} color={:red} class="rounded-tl-3xl" container_class="rounded-bl-3xl bg-light-red"/>
+      <.team players={@green_team} color={:green} class="rounded-tr-3xl" container_class="rounded-br-3xl bg-light-green"/>
     </div>
 
     <div class="flex justify-center">
@@ -106,19 +102,10 @@ defmodule RoboSoccerPlatformWeb.Controller do
       <div class={"text-center #{@class} bg-light-orange p-2"}>
         druzyna <%= if @color == :red, do: "czerwona", else: "zielona" %>
       </div>
-      <.team_players class={if @color == :red, do: "bg-light-red", else: "bg-light-green"} players={@players}/>
-    </div>
-    """
-  end
-
-  attr :players, :list, required: true
-  attr :class, :string, default: ""
-
-  defp team_players(assigns) do
-    ~H"""
-    <div class={"flex flex-col flex-1 rounded-bl-3xl px-16 py-8 gap-5 #{@class}"}>
-      <div class="text-center bg-sky-blue" :for={player <- @players}>
-        <%= player.username %>
+      <div class={"flex flex-col flex-1 px-16 py-8 gap-5 #{@container_class}"}>
+        <div class="text-center bg-sky-blue" :for={player <- @players}>
+          <%= player.username %>
+        </div>
       </div>
     </div>
     """
