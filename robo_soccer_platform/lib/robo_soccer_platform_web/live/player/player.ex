@@ -1,7 +1,7 @@
 defmodule RoboSoccerPlatformWeb.Player do
   use RoboSoccerPlatformWeb, :live_view
 
-  import RoboSoccerPlatformWeb.Player.Assigns
+  alias RoboSoccerPlatformWeb.Player.Utils
 
   def mount(_params, _session, socket) do
     socket =
@@ -51,7 +51,7 @@ defmodule RoboSoccerPlatformWeb.Player do
   end
 
   def handle_event("submit", %{"team" => team}, socket) do
-    form = assign_form_errors(socket.assigns.form)
+    form = Utils.put_form_errors(socket.assigns.form)
 
     if form["errors"] == [] do
       socket = assign(socket, form: form)
