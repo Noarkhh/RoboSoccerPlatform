@@ -17,7 +17,7 @@ defmodule RoboSoccerPlatformWeb.Player.Steering do
       |> assign(team: params["team"])
       |> assign(username: params["username"])
 
-    RoboSoccerPlatformWeb.Endpoint.broadcast_from(self(), @controller, "register", %{
+    RoboSoccerPlatformWeb.Endpoint.broadcast_from(self(), @controller, "register_player", %{
       id: socket.assigns.id,
       team: socket.assigns.team,
       username: socket.assigns.username
