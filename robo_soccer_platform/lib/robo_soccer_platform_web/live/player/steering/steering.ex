@@ -11,19 +11,21 @@ defmodule RoboSoccerPlatformWeb.Player.Steering do
   end
 
   def handle_params(params, _uri, socket) do
-    socket =
-      socket
-      |> assign(id: params["id"])
-      |> assign(team: params["team"])
-      |> assign(username: params["username"])
+    id = params["id"]
+    team = params["team"]
+    username = params["username"]
 
-    RoboSoccerPlatformWeb.Endpoint.broadcast_from(self(), @controller, "register", %{
-      id: socket.assigns.id,
-      team: socket.assigns.team,
-      username: socket.assigns.username
+    RoboSoccerPlatformWeb.Endpoint.broadcast_from(self(), @controller, "register_player", %{
+      id: id,
+      team: team,
+      username: username
     })
 
-    {:noreply, socket}
+    socket
+    |> assign(id: id)
+    |> assign(team: team)
+    |> assign(username: username)
+    |> then(&{:noreply, &1})
   end
 
   def render(assigns) do
