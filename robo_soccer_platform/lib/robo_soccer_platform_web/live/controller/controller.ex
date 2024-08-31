@@ -9,14 +9,16 @@ defmodule RoboSoccerPlatformWeb.Controller do
   def mount(_params, _session, socket) do
     RoboSoccerPlatformWeb.Endpoint.subscribe(@controller)
 
-    socket =
-      socket
-      |> assign(game_started: false)
-      |> assign(players: %{})
-      |> assign(green_team: [])
-      |> assign(red_team: [])
+    socket
+    |> assign(game_started: false)
+    |> assign(players: %{})
+    |> assign(green_team: [])
+    |> assign(red_team: [])
+    |> then(&{:ok, &1})
+  end
 
-    {:ok, socket}
+  def handle_params(_params, _uri, socket) do
+    {:noreply, socket}
   end
 
   def render(assigns) do
@@ -27,37 +29,7 @@ defmodule RoboSoccerPlatformWeb.Controller do
 
     ~H"""
     <div class="flex flex-col h-[80vh] gap-8">
-      <div class="flex flex-1" :if={not @game_started}>
-        <div class="flex flex-col flex-1">
-          <div class="text-center rounded-tl-3xl bg-light-orange p-2">
-            druzyna czerwona
-          </div>
-          <div class="flex flex-col flex-1 rounded-bl-3xl bg-light-red px-16 py-8 gap-5">
-            <div class="text-center bg-sky-blue" :for={player <- @red_team}>
-              <%= player.username %>
-            </div>
-          </div>
-        </div>
-        <div class="flex flex-col flex-1">
-          <div class="text-center rounded-tr-3xl bg-light-orange p-2">
-            druzyna zielona
-          </div>
-          <div class="flex flex-col flex-1 rounded-br-3xl bg-light-green px-16 py-8 gap-5">
-            <div class="text-center bg-sky-blue" :for={player <- @green_team}>
-              <%= player.username %>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="flex justify-center">
-        <.button
-          :if={not @game_started}
-          phx-click="start_game"
-          class="bg-white !text-black !text-4xl"
-        >
-          START
-        </.button>
-      </div>
+      <.before_game_view red_team={@red_team} green_team={@green_team} :if={not @game_started}/>
     </div>
     """
   end
@@ -70,18 +42,20 @@ defmodule RoboSoccerPlatformWeb.Controller do
   def handle_info(
         %{
           topic: @controller,
-          event: "register",
+          event: "register_player",
           payload: %{id: id, team: team, username: username}
         },
         socket
       ) do
     # allow registering only before game start
-
     if socket.assigns.game_started do
       {:noreply, socket}
     else
       players = Map.put(socket.assigns.players, id, %{team: team, username: username})
-      {:noreply, assign(socket, players: players)}
+
+      socket
+      |> assign(players: players)
+      |> then(&{:noreply, &1})
     end
   end
 
@@ -99,5 +73,54 @@ defmodule RoboSoccerPlatformWeb.Controller do
     else
       {:noreply, socket}
     end
+  end
+
+  attr :red_team, :list, default: []
+  attr :green_team, :list, default: []
+
+  defp before_game_view(assigns) do
+    ~H"""
+    <div class="flex flex-1" >
+      <.team players={@red_team} color={:red} class="rounded-tl-3xl"/>
+      <.team players={@green_team} color={:green} class="rounded-tr-3xl"/>
+    </div>
+
+    <div class="flex justify-center">
+      <.button
+        phx-click="start_game"
+        class="bg-white !text-black !text-4xl"
+      >
+        START
+      </.button>
+    </div>
+    """
+  end
+
+  attr :players, :list, required: true
+  attr :color, :atom, required: true
+  attr :class, :string, default: ""
+
+  defp team(assigns) do
+    ~H"""
+    <div class="flex flex-col flex-1">
+      <div class={"text-center #{@class} bg-light-orange p-2"}>
+        druzyna <%= if @color == :red, do: "czerwona", else: "zielona" %>
+      </div>
+      <.team_players class={if @color == :red, do: "bg-light-red", else: "bg-light-green"} players={@players}/>
+    </div>
+    """
+  end
+
+  attr :players, :list, required: true
+  attr :class, :string, default: ""
+
+  defp team_players(assigns) do
+    ~H"""
+    <div class={"flex flex-col flex-1 rounded-bl-3xl px-16 py-8 gap-5 #{@class}"}>
+      <div class="text-center bg-sky-blue" :for={player <- @players}>
+        <%= player.username %>
+      </div>
+    </div>
+    """
   end
 end
