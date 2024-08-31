@@ -1,21 +1,21 @@
 defmodule RoboSoccerPlatformWeb.Controller.Assigns do
   import Phoenix.Component, only: [assign: 2]
 
-  def assign_red_team(assigns) do
+  def assign_red_team(socket) do
     red_team =
-      assigns.players
+      socket.assigns.players
       |> Map.filter(fn {_player_id, player} -> player.team == "red" end)
       |> Map.values()
 
-    assign(assigns, red_team: red_team)
+    assign(socket, red_team: red_team)
   end
 
-  def assign_green_team(assigns) do
+  def assign_green_team(socket) do
     green_team =
-      assigns.players
+      socket.assigns.players
       |> Map.filter(fn {_player_id, player} -> player.team == "green" end)
       |> Map.values()
 
-    assign(assigns, green_team: green_team)
+    assign(socket, green_team: green_team)
   end
 end

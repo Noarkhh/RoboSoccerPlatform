@@ -18,11 +18,6 @@ defmodule RoboSoccerPlatformWeb.Controller do
   end
 
   def render(assigns) do
-    assigns =
-      assigns
-      |> assign_red_team()
-      |> assign_green_team()
-
     ~H"""
     <div class="flex flex-col h-[80vh] gap-8">
       <.before_game_view red_team={@red_team} green_team={@green_team} :if={not @game_started}/>
@@ -47,25 +42,37 @@ defmodule RoboSoccerPlatformWeb.Controller do
     if socket.assigns.game_started do
       {:noreply, socket}
     else
-      players = Map.put(socket.assigns.players, id, %{team: team, username: username})
+      players = Map.put(socket.assigns.players, id, %{team: team, username: username, x: 0, y: 0})
 
       socket
       |> assign(players: players)
+      |> assign_red_team()
+      |> assign_green_team()
       |> then(&{:noreply, &1})
     end
   end
 
   def handle_info(
-        %{topic: @controller, event: "joystick_position", payload: %{x: x, y: y, id: id}},
+        %{
+          topic: @controller,
+          event: "joystick_position",
+          payload: %{x: x, y: y, id: id}
+        },
         socket
       ) do
     if Map.has_key?(socket.assigns.players, id) do
-      player = Map.get(socket.assigns.players, id, %{})
-      updated_player = Map.merge(player, %{x: x, y: y})
+      updated_player =
+        socket.assigns.players
+        |> Map.get(id)
+        |> Map.merge(%{x: x, y: y})
 
       players = Map.put(socket.assigns.players, id, updated_player)
 
-      {:noreply, assign(socket, players: players)}
+      socket
+      |> assign(players: players)
+      |> assign_red_team()
+      |> assign_green_team()
+      |> then(&{:noreply, &1})
     else
       {:noreply, socket}
     end
@@ -95,6 +102,7 @@ defmodule RoboSoccerPlatformWeb.Controller do
   attr :players, :list, required: true
   attr :color, :atom, required: true
   attr :class, :string, default: ""
+  attr :container_class, :string, default: ""
 
   defp team(assigns) do
     ~H"""
