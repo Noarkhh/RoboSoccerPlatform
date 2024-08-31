@@ -20,7 +20,8 @@ defmodule RoboSoccerPlatformWeb.Controller do
   def render(assigns) do
     ~H"""
     <div class="flex flex-col h-[80vh] gap-8">
-      <.before_game_view red_team={@red_team} green_team={@green_team} :if={not @game_started}/>
+      <.before_game_view red_team={@red_team} green_team={@green_team} :if={@game_started}/>
+      <.in_game_view red_team={@red_team} green_team={@green_team} :if={not @game_started}/>
     </div>
     """
   end
@@ -28,6 +29,18 @@ defmodule RoboSoccerPlatformWeb.Controller do
   def handle_event("start_game", _params, socket) do
     RoboSoccerPlatformWeb.Endpoint.broadcast_from(self(), @game_start, "start_game", nil)
     {:noreply, assign(socket, game_started: true)}
+  end
+
+  def handle_event("stop_game", _params, socket) do
+    {:noreply, socket}
+  end
+
+  def handle_event("goal_red", _params, socket) do
+    {:noreply, socket}
+  end
+
+  def handle_event("goal_green", _params, socket) do
+    {:noreply, socket}
   end
 
   def handle_info(
@@ -83,10 +96,7 @@ defmodule RoboSoccerPlatformWeb.Controller do
 
   defp before_game_view(assigns) do
     ~H"""
-    <div class="flex flex-1" >
-      <.team players={@red_team} color={:red} class="rounded-tl-3xl" container_class="rounded-bl-3xl bg-light-red"/>
-      <.team players={@green_team} color={:green} class="rounded-tr-3xl" container_class="rounded-br-3xl bg-light-green"/>
-    </div>
+    <.teams red_team={@red_team} green_team={@green_team} />
 
     <div class="flex justify-center">
       <.button
@@ -95,6 +105,61 @@ defmodule RoboSoccerPlatformWeb.Controller do
       >
         START
       </.button>
+    </div>
+    """
+  end
+
+  attr :red_team, :list, default: []
+  attr :green_team, :list, default: []
+
+  defp in_game_view(assigns) do
+    ~H"""
+    <div class="flex flex-1">
+      <.teams red_team={@red_team} green_team={@green_team} />
+
+      <div class="flex flex-col flex-1 items-center gap-8">
+        <.time_left minutes={5} seconds={0} />
+        <.score red_goals={0} green_goals={0} />
+      </div>
+
+      <div class="flex flex-col flex-1">
+        <.stats />
+      </div>
+    </div>
+
+    <div class="flex justify-center gap-32">
+      <.button
+        phx-click="stop_game"
+        class="bg-white !text-black !text-4xl"
+      >
+        STOP
+      </.button>
+
+      <.button
+        phx-click="goal_red"
+        class="bg-red-500 !text-black !text-4xl"
+      >
+        GOL CZERWONI
+      </.button>
+
+      <.button
+        phx-click="goal_green"
+        class="bg-green-500 !text-black !text-4xl"
+      >
+        GOL ZIELONI
+      </.button>
+    </div>
+    """
+  end
+
+  attr :red_team, :list, required: true
+  attr :green_team, :list, required: true
+
+  defp teams(assigns) do
+    ~H"""
+    <div class="flex flex-1">
+      <.team players={@red_team} color={:red} class="rounded-tl-3xl" container_class="rounded-bl-3xl bg-light-red"/>
+      <.team players={@green_team} color={:green} class="rounded-tr-3xl" container_class="rounded-br-3xl bg-light-green"/>
     </div>
     """
   end
@@ -117,5 +182,51 @@ defmodule RoboSoccerPlatformWeb.Controller do
       </div>
     </div>
     """
+  end
+
+  attr :minutes, :integer, required: true
+  attr :seconds, :integer, required: true
+
+  defp time_left(assigns) do
+    assigns =
+      assigns
+      |> assign(minutes: pad_to_two_digits(assigns.minutes))
+      |> assign(seconds: pad_to_two_digits(assigns.seconds))
+
+    ~H"""
+    <div class="bg-white px-16 py-2 text-3xl border border-solid border-black">
+      <%= @minutes %>:<%= @seconds %>
+    </div>
+    """
+  end
+
+  attr :red_goals, :integer, default: 0
+  attr :green_goals, :integer, default: 0
+
+  defp score(assigns) do
+    ~H"""
+    <div class="bg-white px-4 py-2 text-3xl border border-solid border-black">
+      <div class="flex min-w-0">
+        <div class="flex-1 bg-red-500 p-4">
+        </div>
+        <div class="flex-1 p-4 flex items-center justify-center text-3xl whitespace-nowrap">
+          <%= @red_goals %> : <%= @green_goals %>
+        </div>
+        <div class="flex-1 bg-green-500 p-4">
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  defp stats(assigns) do
+    ~H"""
+    """
+  end
+
+  defp pad_to_two_digits(number) do
+    number
+    |> Integer.to_string()
+    |> String.pad_leading(2, "0")
   end
 end
