@@ -44,24 +44,6 @@ defmodule RoboSoccerPlatformWeb.Player do
     """
   end
 
-  attr :team, :any, required: true
-  attr :class, :any, default: ""
-
-  slot :inner_block
-
-  defp join_team_button(assigns) do
-    ~H"""
-    <.button
-      type="button"
-      phx-click="submit"
-      phx-value-team={@team}
-      class={["flex-1 w-full !text-black !text-4xl transition" | List.wrap(@class)]}
-    >
-      <%= render_slot(@inner_block) %>
-    </.button>
-    """
-  end
-
   def handle_event("change", %{"username" => username}, socket) do
     form = Map.put(socket.assigns.form, "username", username)
 
@@ -86,5 +68,23 @@ defmodule RoboSoccerPlatformWeb.Player do
     else
       {:noreply, assign(socket, form: form)}
     end
+  end
+
+  attr :team, :any, required: true
+  attr :class, :any, default: ""
+
+  slot :inner_block
+
+  defp join_team_button(assigns) do
+    ~H"""
+    <.button
+      type="button"
+      phx-click="submit"
+      phx-value-team={@team}
+      class={["flex-1 w-full !text-black !text-4xl transition" | List.wrap(@class)]}
+    >
+      <%= render_slot(@inner_block) %>
+    </.button>
+    """
   end
 end
