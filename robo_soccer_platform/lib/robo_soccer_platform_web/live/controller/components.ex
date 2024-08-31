@@ -19,8 +19,12 @@ defmodule RoboSoccerPlatformWeb.Controller.Components do
     """
   end
 
-  attr :red_team, :list, default: []
-  attr :green_team, :list, default: []
+  attr :red_team, :list, required: true
+  attr :green_team, :list, required: true
+  attr :minutes_left, :integer, required: true
+  attr :seconds_left, :integer, required: true
+  attr :red_goals, :integer, required: true
+  attr :green_goals, :integer, required: true
 
   def in_game_view(assigns) do
     ~H"""
@@ -31,8 +35,8 @@ defmodule RoboSoccerPlatformWeb.Controller.Components do
       </div>
 
       <div class="flex flex-col flex-1 items-center gap-8">
-        <.time_left minutes={5} seconds={0} />
-        <.score red_goals={0} green_goals={0} />
+        <.time_left minutes={@minutes_left} seconds={@seconds_left} />
+        <.score red_goals={@red_goals} green_goals={@green_goals} />
       </div>
     </div>
 
@@ -56,6 +60,13 @@ defmodule RoboSoccerPlatformWeb.Controller.Components do
         class="bg-green-500 !text-black !text-4xl"
       >
         GOL ZIELONI
+      </.button>
+
+      <.button
+        phx-click="reset_score"
+        class="bg-white !text-black !text-4xl"
+      >
+        ZRESETUJ WYNIK
       </.button>
     </div>
     """

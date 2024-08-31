@@ -15,14 +15,31 @@ defmodule RoboSoccerPlatformWeb.Controller do
     |> assign(players: %{})
     |> assign(green_team: [])
     |> assign(red_team: [])
+    |> assign(green_goals: 0)
+    |> assign(red_goals: 0)
+    |> assign(minutes_left: 0)
+    |> assign(seconds_left: 0)
     |> then(&{:ok, &1})
   end
 
   def render(assigns) do
     ~H"""
     <div class="flex flex-col h-[80vh] gap-8">
-      <.before_game_view red_team={@red_team} green_team={@green_team} :if={@game_started}/>
-      <.in_game_view red_team={@red_team} green_team={@green_team} :if={not @game_started}/>
+      <.before_game_view
+        :if={@game_started}
+        red_team={@red_team}
+        green_team={@green_team}
+      />
+
+      <.in_game_view
+        :if={not @game_started}
+        red_team={@red_team}
+        green_team={@green_team}
+        minutes_left={@minutes_left}
+        seconds_left={@seconds_left}
+        red_goals={@red_goals}
+        green_goals={@green_goals}
+      />
     </div>
     """
   end
@@ -37,11 +54,22 @@ defmodule RoboSoccerPlatformWeb.Controller do
   end
 
   def handle_event("goal_red", _params, socket) do
-    {:noreply, socket}
+    socket
+    |> assign(red_goals: socket.assigns.red_goals + 1)
+    |> then(&{:noreply, &1})
   end
 
   def handle_event("goal_green", _params, socket) do
-    {:noreply, socket}
+    socket
+    |> assign(green_goals: socket.assigns.green_goals + 1)
+    |> then(&{:noreply, &1})
+  end
+
+  def handle_event("reset_score", _params, socket) do
+    socket
+    |> assign(green_goals: 0)
+    |> assign(red_goals: 0)
+    |> then(&{:noreply, &1})
   end
 
   def handle_info(
