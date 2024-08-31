@@ -117,13 +117,12 @@ defmodule RoboSoccerPlatformWeb.Controller do
     <div class="flex flex-1">
       <.teams red_team={@red_team} green_team={@green_team} />
 
+      <div class="flex flex-col flex-1">
+      </div>
+
       <div class="flex flex-col flex-1 items-center gap-8">
         <.time_left minutes={5} seconds={0} />
         <.score red_goals={0} green_goals={0} />
-      </div>
-
-      <div class="flex flex-col flex-1">
-        <.stats />
       </div>
     </div>
 
@@ -216,11 +215,6 @@ defmodule RoboSoccerPlatformWeb.Controller do
         </div>
       </div>
     </div>
-    """
-  end
-
-  defp stats(assigns) do
-    ~H"""
     """
   end
 
