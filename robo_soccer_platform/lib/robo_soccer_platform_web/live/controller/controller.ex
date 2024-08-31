@@ -2,6 +2,7 @@ defmodule RoboSoccerPlatformWeb.Controller do
   use RoboSoccerPlatformWeb, :live_view
 
   import RoboSoccerPlatformWeb.Controller.Assigns
+  import RoboSoccerPlatformWeb.Controller.Components, only: [before_game_view: 1, in_game_view: 1]
 
   @game_start "game_start"
   @controller "controller"
@@ -14,13 +15,31 @@ defmodule RoboSoccerPlatformWeb.Controller do
     |> assign(players: %{})
     |> assign(green_team: [])
     |> assign(red_team: [])
+    |> assign(green_goals: 0)
+    |> assign(red_goals: 0)
+    |> assign(minutes_left: 0)
+    |> assign(seconds_left: 0)
     |> then(&{:ok, &1})
   end
 
   def render(assigns) do
     ~H"""
     <div class="flex flex-col h-[80vh] gap-8">
-      <.before_game_view red_team={@red_team} green_team={@green_team} :if={not @game_started}/>
+      <.before_game_view
+        :if={@game_started}
+        red_team={@red_team}
+        green_team={@green_team}
+      />
+
+      <.in_game_view
+        :if={not @game_started}
+        red_team={@red_team}
+        green_team={@green_team}
+        minutes_left={@minutes_left}
+        seconds_left={@seconds_left}
+        red_goals={@red_goals}
+        green_goals={@green_goals}
+      />
     </div>
     """
   end
@@ -28,6 +47,29 @@ defmodule RoboSoccerPlatformWeb.Controller do
   def handle_event("start_game", _params, socket) do
     RoboSoccerPlatformWeb.Endpoint.broadcast_from(self(), @game_start, "start_game", nil)
     {:noreply, assign(socket, game_started: true)}
+  end
+
+  def handle_event("stop_game", _params, socket) do
+    {:noreply, socket}
+  end
+
+  def handle_event("goal_red", _params, socket) do
+    socket
+    |> assign(red_goals: socket.assigns.red_goals + 1)
+    |> then(&{:noreply, &1})
+  end
+
+  def handle_event("goal_green", _params, socket) do
+    socket
+    |> assign(green_goals: socket.assigns.green_goals + 1)
+    |> then(&{:noreply, &1})
+  end
+
+  def handle_event("reset_score", _params, socket) do
+    socket
+    |> assign(green_goals: 0)
+    |> assign(red_goals: 0)
+    |> then(&{:noreply, &1})
   end
 
   def handle_info(
@@ -76,46 +118,5 @@ defmodule RoboSoccerPlatformWeb.Controller do
     else
       {:noreply, socket}
     end
-  end
-
-  attr :red_team, :list, default: []
-  attr :green_team, :list, default: []
-
-  defp before_game_view(assigns) do
-    ~H"""
-    <div class="flex flex-1" >
-      <.team players={@red_team} color={:red} class="rounded-tl-3xl" container_class="rounded-bl-3xl bg-light-red"/>
-      <.team players={@green_team} color={:green} class="rounded-tr-3xl" container_class="rounded-br-3xl bg-light-green"/>
-    </div>
-
-    <div class="flex justify-center">
-      <.button
-        phx-click="start_game"
-        class="bg-white !text-black !text-4xl"
-      >
-        START
-      </.button>
-    </div>
-    """
-  end
-
-  attr :players, :list, required: true
-  attr :color, :atom, required: true
-  attr :class, :string, default: ""
-  attr :container_class, :string, default: ""
-
-  defp team(assigns) do
-    ~H"""
-    <div class="flex flex-col flex-1">
-      <div class={"text-center #{@class} bg-light-orange p-2"}>
-        druzyna <%= if @color == :red, do: "czerwona", else: "zielona" %>
-      </div>
-      <div class={"flex flex-col flex-1 px-16 py-8 gap-5 #{@container_class}"}>
-        <div class="text-center bg-sky-blue" :for={player <- @players}>
-          <%= player.username %>
-        </div>
-      </div>
-    </div>
-    """
   end
 end
