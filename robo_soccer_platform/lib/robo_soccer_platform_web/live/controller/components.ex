@@ -1,12 +1,11 @@
 defmodule RoboSoccerPlatformWeb.Controller.Components do
   use RoboSoccerPlatformWeb, :component
 
-  attr :red_team, :list, default: []
-  attr :green_team, :list, default: []
+  attr :teams, :map, required: true
 
   def before_game_view(assigns) do
     ~H"""
-    <.teams red_team={@red_team} green_team={@green_team} />
+    <.teams red_players={@teams.red.players} green_players={@teams.green.players} />
 
     <div class="flex justify-center">
       <.button
@@ -19,25 +18,22 @@ defmodule RoboSoccerPlatformWeb.Controller.Components do
     """
   end
 
+  attr :teams, :map, required: true
   attr :game_state, :atom, required: true
-  attr :red_team, :list, required: true
-  attr :green_team, :list, required: true
   attr :seconds_left, :integer, required: true
-  attr :red_goals, :integer, required: true
-  attr :green_goals, :integer, required: true
   attr :time_is_over, :boolean, required: true
 
   def in_game_view(assigns) do
     ~H"""
     <div class="flex flex-1">
-      <.teams red_team={@red_team} green_team={@green_team} />
+      <.teams red_players={@teams.red.players} green_players={@teams.green.players} />
 
       <div class="flex flex-col flex-1">
       </div>
 
       <div class="flex flex-col flex-1 items-center gap-8">
         <.time_left seconds={@seconds_left} time_is_over={@time_is_over} />
-        <.score red_goals={@red_goals} green_goals={@green_goals} />
+        <.score red_goals={@teams.red.goals} green_goals={@teams.green.goals} />
       </div>
     </div>
 
@@ -50,14 +46,16 @@ defmodule RoboSoccerPlatformWeb.Controller.Components do
       </.button>
 
       <.button
-        phx-click="goal_red"
+        phx-click="goal"
+        phx-value-team="red"
         class="bg-red-500 !text-black !text-4xl"
       >
         GOL CZERWONI
       </.button>
 
       <.button
-        phx-click="goal_green"
+        phx-click="goal"
+        phx-value-team="green"
         class="bg-green-500 !text-black !text-4xl"
       >
         GOL ZIELONI
@@ -73,14 +71,14 @@ defmodule RoboSoccerPlatformWeb.Controller.Components do
     """
   end
 
-  attr :red_team, :list, required: true
-  attr :green_team, :list, required: true
+  attr :red_players, :list, required: true
+  attr :green_players, :list, required: true
 
   defp teams(assigns) do
     ~H"""
     <div class="flex flex-1">
-      <.team players={@red_team} color={:red} class="rounded-tl-3xl" container_class="rounded-bl-3xl bg-light-red"/>
-      <.team players={@green_team} color={:green} class="rounded-tr-3xl" container_class="rounded-br-3xl bg-light-green"/>
+      <.team players={@red_players} color={:red} class="rounded-tl-3xl" container_class="rounded-bl-3xl bg-light-red"/>
+      <.team players={@green_players} color={:green} class="rounded-tr-3xl" container_class="rounded-br-3xl bg-light-green"/>
     </div>
     """
   end

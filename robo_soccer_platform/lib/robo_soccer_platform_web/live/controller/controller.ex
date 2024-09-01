@@ -1,8 +1,9 @@
 defmodule RoboSoccerPlatformWeb.Controller do
   use RoboSoccerPlatformWeb, :live_view
 
-  import RoboSoccerPlatformWeb.Controller.Assigns
   import RoboSoccerPlatformWeb.Controller.Components, only: [before_game_view: 1, in_game_view: 1]
+
+  alias RoboSoccerPlatformWeb.Controller.Assigns
 
   @game_start "game_start"
   @controller "controller"
@@ -13,10 +14,10 @@ defmodule RoboSoccerPlatformWeb.Controller do
     socket
     |> assign(game_state: :before_start)
     |> assign(players: %{})
-    |> assign(green_team: [])
-    |> assign(red_team: [])
-    |> assign(green_goals: 0)
-    |> assign(red_goals: 0)
+    |> assign(teams: %{
+      green: %{players: [], goals: 0},
+      red: %{players: [], goals: 0}
+    })
     |> assign(seconds_left: 0)
     |> assign(time_is_over: false)
     |> then(&{:ok, &1})
@@ -27,18 +28,14 @@ defmodule RoboSoccerPlatformWeb.Controller do
     <div class="flex flex-col h-[80vh] gap-8">
       <.before_game_view
         :if={@game_state == :before_start}
-        red_team={@red_team}
-        green_team={@green_team}
+        teams={@teams}
       />
 
       <.in_game_view
         :if={@game_state != :before_start}
+        teams={@teams}
         game_state={@game_state}
-        red_team={@red_team}
-        green_team={@green_team}
         seconds_left={@seconds_left}
-        red_goals={@red_goals}
-        green_goals={@green_goals}
         time_is_over={@time_is_over}
       />
     </div>
@@ -57,6 +54,12 @@ defmodule RoboSoccerPlatformWeb.Controller do
     |> then(&{:noreply, &1})
   end
 
+  def handle_event("stop_game", _params, socket) do
+    socket
+    |> assign(game_state: :stopped)
+    |> then(&{:noreply, &1})
+  end
+
   def handle_event("start_game_again", _params, socket) do
     Process.send_after(self(), :tick, 1000)
 
@@ -65,28 +68,24 @@ defmodule RoboSoccerPlatformWeb.Controller do
     |> then(&{:noreply, &1})
   end
 
-  def handle_event("stop_game", _params, socket) do
-    socket
-    |> assign(game_state: :stopped)
-    |> then(&{:noreply, &1})
-  end
+  def handle_event("goal", %{"team" => team_color}, socket) do
+    team_color_as_atom = String.to_existing_atom(team_color)
 
-  def handle_event("goal_red", _params, socket) do
-    socket
-    |> assign(red_goals: socket.assigns.red_goals + 1)
-    |> then(&{:noreply, &1})
-  end
+    teams = update_in(socket.assigns.teams, [team_color_as_atom, :goals], &(&1 + 1))
 
-  def handle_event("goal_green", _params, socket) do
     socket
-    |> assign(green_goals: socket.assigns.green_goals + 1)
+    |> assign(teams: teams)
     |> then(&{:noreply, &1})
   end
 
   def handle_event("reset_score", _params, socket) do
+    teams =
+      socket.assigns.teams
+      |> put_in([:red, :goals], 0)
+      |> put_in([:green, :goals], 0)
+
     socket
-    |> assign(green_goals: 0)
-    |> assign(red_goals: 0)
+    |> assign(teams: teams)
     |> then(&{:noreply, &1})
   end
 
@@ -126,8 +125,7 @@ defmodule RoboSoccerPlatformWeb.Controller do
 
     socket
     |> assign(players: players)
-    |> assign_red_team()
-    |> assign_green_team()
+    |> Assigns.assign_teams()
     |> then(&{:noreply, &1})
   end
 
@@ -149,8 +147,7 @@ defmodule RoboSoccerPlatformWeb.Controller do
 
       socket
       |> assign(players: players)
-      |> assign_red_team()
-      |> assign_green_team()
+      |> Assigns.assign_teams()
       |> then(&{:noreply, &1})
     else
       {:noreply, socket}
