@@ -29,15 +29,26 @@ Hooks.JoyStick = {
   mounted() {
     const joy = new JoyStick(this.el.id)
     const view = this;
+
+    let intervalId;
     
-    this.handleEvent("game_started", () =>
-      setInterval(
-        function(){ 
-          view.pushEvent("update_joystick_position", {x: joy.GetX(), y: joy.GetY()})
-        }, 
-        50
-      )
-    )
+    this.handleEvent("game_started", () => {
+      if (!intervalId) {
+        intervalId = setInterval(
+          function() {
+            view.pushEvent("update_joystick_position", { x: joy.GetX(), y: joy.GetY() });
+          }, 
+          50
+        );
+      }
+    })
+
+    this.handleEvent("game_stopped", () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+        intervalId = null;
+      }
+    });
   }
 }
 

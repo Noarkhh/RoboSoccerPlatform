@@ -1,6 +1,8 @@
 defmodule RoboSoccerPlatformWeb.Player do
   use RoboSoccerPlatformWeb, :live_view
 
+  alias RoboSoccerPlatformWeb.Player.Utils
+
   def mount(_params, _session, socket) do
     socket =
       socket
@@ -42,24 +44,6 @@ defmodule RoboSoccerPlatformWeb.Player do
     """
   end
 
-  attr :team, :any, required: true
-  attr :class, :any, default: ""
-
-  slot :inner_block
-
-  defp join_team_button(assigns) do
-    ~H"""
-    <.button
-      type="button"
-      phx-click="submit"
-      phx-value-team={@team}
-      class={["flex-1 w-full !text-black !text-4xl transition" | List.wrap(@class)]}
-    >
-      <%= render_slot(@inner_block) %>
-    </.button>
-    """
-  end
-
   def handle_event("change", %{"username" => username}, socket) do
     form = Map.put(socket.assigns.form, "username", username)
 
@@ -67,7 +51,7 @@ defmodule RoboSoccerPlatformWeb.Player do
   end
 
   def handle_event("submit", %{"team" => team}, socket) do
-    form = assign_form_errors(socket.assigns.form)
+    form = Utils.put_form_errors(socket.assigns.form)
 
     if form["errors"] == [] do
       socket = assign(socket, form: form)
@@ -86,14 +70,21 @@ defmodule RoboSoccerPlatformWeb.Player do
     end
   end
 
-  defp assign_form_errors(form) do
-    errors =
-      if Map.get(form, "username", "") == "" do
-        ["Przed dołączeniem do drużyny podaj swoją nazwę"]
-      else
-        []
-      end
+  attr :team, :any, required: true
+  attr :class, :any, default: ""
 
-    Map.put(form, "errors", errors)
+  slot :inner_block
+
+  defp join_team_button(assigns) do
+    ~H"""
+    <.button
+      type="button"
+      phx-click="submit"
+      phx-value-team={@team}
+      class={["flex-1 w-full !text-black !text-4xl transition" | List.wrap(@class)]}
+    >
+      <%= render_slot(@inner_block) %>
+    </.button>
+    """
   end
 end

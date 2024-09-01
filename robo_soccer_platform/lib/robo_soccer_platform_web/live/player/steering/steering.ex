@@ -3,11 +3,11 @@ defmodule RoboSoccerPlatformWeb.Player.Steering do
 
   alias RoboSoccerPlatform.Player
 
-  @game_start "game_start"
+  @game_state "game_state"
   @controller "controller"
 
   def mount(_params, _session, socket) do
-    RoboSoccerPlatformWeb.Endpoint.subscribe(@game_start)
+    RoboSoccerPlatformWeb.Endpoint.subscribe(@game_state)
 
     {:ok, socket}
   end
@@ -23,7 +23,7 @@ defmodule RoboSoccerPlatformWeb.Player.Steering do
       socket
       |> assign(player: player)
 
-    RoboSoccerPlatformWeb.Endpoint.broadcast_from(self(), @controller, "register", player)
+    RoboSoccerPlatformWeb.Endpoint.broadcast_from(self(), @controller, "register_player", player)
 
     {:noreply, socket}
   end
@@ -54,7 +54,11 @@ defmodule RoboSoccerPlatformWeb.Player.Steering do
     {:noreply, socket}
   end
 
-  def handle_info(%{topic: @game_start}, socket) do
+  def handle_info(%{topic: @game_state, event: "start_game"}, socket) do
     {:noreply, push_event(socket, "game_started", %{})}
+  end
+
+  def handle_info(%{topic: @game_state, event: "stop_game"}, socket) do
+    {:noreply, push_event(socket, "game_stopped", %{})}
   end
 end
