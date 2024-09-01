@@ -50,7 +50,7 @@ defmodule RoboSoccerPlatformWeb.Controller do
     Process.send_after(self(), :tick, 1000)
 
     socket
-    |> assign(seconds_left: 10)
+    |> assign(seconds_left: 10 * 60)
     |> assign(time_is_over: false)
     |> assign(game_started: true)
     |> then(&{:noreply, &1})
