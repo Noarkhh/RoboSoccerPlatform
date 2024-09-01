@@ -62,7 +62,7 @@ defmodule RoboSoccerPlatform.PlayerInputAggregator do
   end
 
   @impl true
-  def handle_info(%{topic: @game_state, event: "game_stop"}, state) do
+  def handle_info(%{topic: @game_state, event: "stop_game"}, state) do
     Map.values(state.player_inputs)
     |> Enum.group_by(& &1.player.team)
     |> Enum.each(fn {team, _player_inputs} ->
