@@ -2,8 +2,7 @@ defmodule RoboSoccerPlatform.PlayerInputAggregator do
   use GenServer
 
   require Logger
-  alias RoboSoccerPlatform.RobotConnection
-  alias RoboSoccerPlatform.Player
+  alias RoboSoccerPlatform.{Player, RobotConnection}
 
   @controller "controller"
   @game_state "game_state"
@@ -63,19 +62,37 @@ defmodule RoboSoccerPlatform.PlayerInputAggregator do
   end
 
   @impl true
+  def handle_info(%{topic: @game_state, event: "game_stop"}, state) do
+    Map.values(state.player_inputs)
+    |> Enum.group_by(& &1.player.team)
+    |> Enum.each(fn {team, _player_inputs} ->
+      RobotConnection.send_instruction(state.robot_connections[team], %{x: 0.0, y: 0.0})
+    end)
+
+    Process.cancel_timer(state.aggregation_timer)
+
+    {:noreply, %{state | game_started: false, aggregation_timer: nil}}
+  end
+
+  @impl true
   def handle_info(
         %{topic: @controller, event: "register_player", payload: player},
-        %{game_started: false} = state
+        %State{game_started: false} = state
       ) do
     player_inputs = Map.put(state.player_inputs, player.id, %{player: player, x: 0.0, y: 0.0})
-    Logger.info("Player registered: #{inspect(player)}")
+
+    Logger.debug("""
+    New player registered: #{inspect(player)}
+    All players registered: #{inspect(Enum.map(player_inputs, fn {_id, input} -> input.player end))}
+    """)
+
     {:noreply, %{state | player_inputs: player_inputs}}
   end
 
   @impl true
   def handle_info(
         %{topic: @controller, event: "joystick_position", payload: %{x: x, y: y, id: id}},
-        %{game_started: true} = state
+        %State{game_started: true} = state
       ) do
     player_input = %{state.player_inputs[id] | x: x, y: y}
     state = %{state | player_inputs: %{state.player_inputs | id => player_input}}
@@ -83,7 +100,7 @@ defmodule RoboSoccerPlatform.PlayerInputAggregator do
   end
 
   @impl true
-  def handle_info(:aggregate, state) do
+  def handle_info(:aggregate, %State{game_started: true} = state) do
     Map.values(state.player_inputs)
     |> Enum.group_by(& &1.player.team)
     |> Enum.each(fn {team, player_inputs} ->
@@ -98,7 +115,7 @@ defmodule RoboSoccerPlatform.PlayerInputAggregator do
   @impl true
   def handle_info(msg, state) do
     Logger.warning("""
-    Unhandled message: #{inspect(msg)}
+    Ignoring message: #{inspect(msg)}
     State: #{inspect(state)}
     """)
 
@@ -116,7 +133,7 @@ defmodule RoboSoccerPlatform.PlayerInputAggregator do
     robot_connections =
       opts
       |> Keyword.fetch!(:robot_configs)
-      |> Enum.map(fn {team, %{robot_ip_address: ip_address, local_port: local_port}} ->
+      |> Map.new(fn {team, %{robot_ip_address: ip_address, local_port: local_port}} ->
         case RobotConnection.start(team, local_port, ip_address) do
           {:ok, pid} ->
             Logger.info("Started RobotConnection for team #{team} with pid #{inspect(pid)}")
@@ -126,7 +143,6 @@ defmodule RoboSoccerPlatform.PlayerInputAggregator do
             raise "Failed starting RobotConnection for team #{team}, reason: #{reason}"
         end
       end)
-      |> Enum.into(%{})
 
     %State{
       robot_connections: robot_connections,
