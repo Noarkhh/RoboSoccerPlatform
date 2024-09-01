@@ -62,6 +62,7 @@ defmodule RoboSoccerPlatformWeb.Player.Steering do
         case game_state do
           "started" ->
             push_event(socket, "game_started", %{})
+
           "stopped" ->
             push_event(socket, "game_stopped", %{})
         end
@@ -96,21 +97,17 @@ defmodule RoboSoccerPlatformWeb.Player.Steering do
   end
 
   defp store(socket, data) do
-    push_event(socket, "store",
-      %{
-        key: socket.assigns.player.id,
-        data: Utils.serialize_to_token(data)
-      }
-    )
+    push_event(socket, "store", %{
+      key: socket.assigns.player.id,
+      data: Utils.serialize_to_token(data)
+    })
   end
 
   defp restore(socket, event \\ "restoreState") do
-    push_event(socket, "restore",
-      %{
-        key: socket.assigns.player.id,
-        event: event
-      }
-    )
+    push_event(socket, "restore", %{
+      key: socket.assigns.player.id,
+      event: event
+    })
   end
 
   defp clear_browser_storage(socket) do
