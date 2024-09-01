@@ -17,8 +17,8 @@ defmodule RoboSoccerPlatformWeb.Controller do
     |> assign(red_team: [])
     |> assign(green_goals: 0)
     |> assign(red_goals: 0)
-    |> assign(minutes_left: 0)
     |> assign(seconds_left: 0)
+    |> assign(time_is_over: false)
     |> then(&{:ok, &1})
   end
 
@@ -26,19 +26,19 @@ defmodule RoboSoccerPlatformWeb.Controller do
     ~H"""
     <div class="flex flex-col h-[80vh] gap-8">
       <.before_game_view
-        :if={@game_started}
+        :if={not @game_started}
         red_team={@red_team}
         green_team={@green_team}
       />
 
       <.in_game_view
-        :if={not @game_started}
+        :if={@game_started}
         red_team={@red_team}
         green_team={@green_team}
-        minutes_left={@minutes_left}
         seconds_left={@seconds_left}
         red_goals={@red_goals}
         green_goals={@green_goals}
+        time_is_over={@time_is_over}
       />
     </div>
     """
@@ -46,7 +46,14 @@ defmodule RoboSoccerPlatformWeb.Controller do
 
   def handle_event("start_game", _params, socket) do
     RoboSoccerPlatformWeb.Endpoint.broadcast_from(self(), @game_start, "start_game", nil)
-    {:noreply, assign(socket, game_started: true)}
+
+    Process.send_after(self(), :tick, 1000)
+
+    socket
+    |> assign(seconds_left: 10 * 60)
+    |> assign(time_is_over: false)
+    |> assign(game_started: true)
+    |> then(&{:noreply, &1})
   end
 
   def handle_event("stop_game", _params, socket) do
@@ -70,6 +77,23 @@ defmodule RoboSoccerPlatformWeb.Controller do
     |> assign(green_goals: 0)
     |> assign(red_goals: 0)
     |> then(&{:noreply, &1})
+  end
+
+  def handle_info(:tick, socket) do
+    seconds_left = socket.assigns.seconds_left - 1
+
+    if seconds_left > 0 do
+      Process.send_after(self(), :tick, 1000)
+
+      socket
+      |> assign(seconds_left: seconds_left)
+      |> then(&{:noreply, &1})
+    else
+      socket
+      |> assign(seconds_left: seconds_left)
+      |> assign(time_is_over: true)
+      |> then(&{:noreply, &1})
+    end
   end
 
   def handle_info(
