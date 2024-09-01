@@ -6,7 +6,7 @@ defmodule RoboSoccerPlatform.PlayerInputAggregator do
   alias RoboSoccerPlatform.Player
 
   @controller "controller"
-  @game_start "game_start"
+  @game_state "game_state"
 
   @default_aggregation_interval_ms 100
   @default_aggregation_function_name :median
@@ -47,13 +47,13 @@ defmodule RoboSoccerPlatform.PlayerInputAggregator do
   @impl true
   def init(opts) do
     RoboSoccerPlatformWeb.Endpoint.subscribe(@controller)
-    RoboSoccerPlatformWeb.Endpoint.subscribe(@game_start)
+    RoboSoccerPlatformWeb.Endpoint.subscribe(@game_state)
 
     {:ok, init_state(opts)}
   end
 
   @impl true
-  def handle_info(%{topic: @game_start, event: "start_game"}, state) do
+  def handle_info(%{topic: @game_state, event: "start_game"}, state) do
     {:noreply,
      %{
        state
@@ -64,10 +64,11 @@ defmodule RoboSoccerPlatform.PlayerInputAggregator do
 
   @impl true
   def handle_info(
-        %{topic: @controller, event: "register", payload: player},
+        %{topic: @controller, event: "register_player", payload: player},
         %{game_started: false} = state
       ) do
     player_inputs = Map.put(state.player_inputs, player.id, %{player: player, x: 0.0, y: 0.0})
+    Logger.info("Player registered: #{inspect(player)}")
     {:noreply, %{state | player_inputs: player_inputs}}
   end
 
