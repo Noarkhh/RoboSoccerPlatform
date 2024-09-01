@@ -21,10 +21,10 @@ defmodule RoboSoccerPlatformWeb.Controller.Components do
 
   attr :red_team, :list, required: true
   attr :green_team, :list, required: true
-  attr :minutes_left, :integer, required: true
   attr :seconds_left, :integer, required: true
   attr :red_goals, :integer, required: true
   attr :green_goals, :integer, required: true
+  attr :time_is_over, :boolean, required: true
 
   def in_game_view(assigns) do
     ~H"""
@@ -35,7 +35,7 @@ defmodule RoboSoccerPlatformWeb.Controller.Components do
       </div>
 
       <div class="flex flex-col flex-1 items-center gap-8">
-        <.time_left minutes={@minutes_left} seconds={@seconds_left} />
+        <.time_left seconds={@seconds_left} time_is_over={@time_is_over} />
         <.score red_goals={@red_goals} green_goals={@green_goals} />
       </div>
     </div>
@@ -104,17 +104,27 @@ defmodule RoboSoccerPlatformWeb.Controller.Components do
     """
   end
 
-  attr :minutes, :integer, required: true
   attr :seconds, :integer, required: true
+  attr :time_is_over, :boolean, required: true
 
   defp time_left(assigns) do
+    minutes =
+      assigns.seconds
+      |> div(60)
+      |> pad_to_two_digits()
+
+    seconds =
+      assigns.seconds
+      |> rem(60)
+      |> pad_to_two_digits()
+
     assigns =
       assigns
-      |> assign(minutes: pad_to_two_digits(assigns.minutes))
-      |> assign(seconds: pad_to_two_digits(assigns.seconds))
+      |> assign(minutes: minutes)
+      |> assign(seconds: seconds)
 
     ~H"""
-    <div class="bg-white px-16 py-2 text-3xl border border-solid border-black">
+    <div class={"#{if @time_is_over, do: "bg-red-500", else: "bg-white"} px-16 py-2 text-3xl border border-solid border-black"}>
       <%= @minutes %>:<%= @seconds %>
     </div>
     """
