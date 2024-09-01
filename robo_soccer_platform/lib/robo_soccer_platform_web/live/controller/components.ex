@@ -19,6 +19,7 @@ defmodule RoboSoccerPlatformWeb.Controller.Components do
     """
   end
 
+  attr :game_state, :atom, required: true
   attr :red_team, :list, required: true
   attr :green_team, :list, required: true
   attr :seconds_left, :integer, required: true
@@ -42,10 +43,10 @@ defmodule RoboSoccerPlatformWeb.Controller.Components do
 
     <div class="flex justify-center gap-32">
       <.button
-        phx-click="stop_game"
+        phx-click={if @game_state == :started, do: "stop_game", else: "start_game_again" }
         class="bg-white !text-black !text-4xl"
       >
-        STOP
+        <%= if @game_state == :started, do: "STOP", else: "START" %>
       </.button>
 
       <.button

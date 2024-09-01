@@ -11,7 +11,7 @@ defmodule RoboSoccerPlatformWeb.Controller do
     RoboSoccerPlatformWeb.Endpoint.subscribe(@controller)
 
     socket
-    |> assign(game_started: false)
+    |> assign(game_state: :before_start)
     |> assign(players: %{})
     |> assign(green_team: [])
     |> assign(red_team: [])
@@ -26,13 +26,14 @@ defmodule RoboSoccerPlatformWeb.Controller do
     ~H"""
     <div class="flex flex-col h-[80vh] gap-8">
       <.before_game_view
-        :if={not @game_started}
+        :if={@game_state == :before_start}
         red_team={@red_team}
         green_team={@green_team}
       />
 
       <.in_game_view
-        :if={@game_started}
+        :if={@game_state != :before_start}
+        game_state={@game_state}
         red_team={@red_team}
         green_team={@green_team}
         seconds_left={@seconds_left}
@@ -52,12 +53,22 @@ defmodule RoboSoccerPlatformWeb.Controller do
     socket
     |> assign(seconds_left: 10 * 60)
     |> assign(time_is_over: false)
-    |> assign(game_started: true)
+    |> assign(game_state: :started)
+    |> then(&{:noreply, &1})
+  end
+
+  def handle_event("start_game_again", _params, socket) do
+    Process.send_after(self(), :tick, 1000)
+
+    socket
+    |> assign(game_state: :started)
     |> then(&{:noreply, &1})
   end
 
   def handle_event("stop_game", _params, socket) do
-    {:noreply, socket}
+    socket
+    |> assign(game_state: :stopped)
+    |> then(&{:noreply, &1})
   end
 
   def handle_event("goal_red", _params, socket) do
@@ -79,6 +90,8 @@ defmodule RoboSoccerPlatformWeb.Controller do
     |> then(&{:noreply, &1})
   end
 
+  def handle_info(:tick, socket) when socket.assigns.game_state != :started, do: {:noreply, socket}
+
   def handle_info(:tick, socket) do
     seconds_left = socket.assigns.seconds_left - 1
 
@@ -96,6 +109,11 @@ defmodule RoboSoccerPlatformWeb.Controller do
     end
   end
 
+  # allow registering only before game start
+  def handle_info(%{topic: @controller, event: "register_player"}, socket) when socket.assigns.game_state != :before_start do
+    {:noreply, socket}
+  end
+
   def handle_info(
         %{
           topic: @controller,
@@ -104,18 +122,13 @@ defmodule RoboSoccerPlatformWeb.Controller do
         },
         socket
       ) do
-    # allow registering only before game start
-    if socket.assigns.game_started do
-      {:noreply, socket}
-    else
-      players = Map.put(socket.assigns.players, id, %{team: team, username: username, x: 0, y: 0})
+    players = Map.put(socket.assigns.players, id, %{team: team, username: username, x: 0, y: 0})
 
-      socket
-      |> assign(players: players)
-      |> assign_red_team()
-      |> assign_green_team()
-      |> then(&{:noreply, &1})
-    end
+    socket
+    |> assign(players: players)
+    |> assign_red_team()
+    |> assign_green_team()
+    |> then(&{:noreply, &1})
   end
 
   def handle_info(
