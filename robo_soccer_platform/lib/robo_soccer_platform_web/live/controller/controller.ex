@@ -5,7 +5,7 @@ defmodule RoboSoccerPlatformWeb.Controller do
 
   alias RoboSoccerPlatformWeb.Controller.Assigns
 
-  @game_start "game_start"
+  @game_state "game_state"
   @controller "controller"
 
   def mount(_params, _session, socket) do
@@ -43,7 +43,7 @@ defmodule RoboSoccerPlatformWeb.Controller do
   end
 
   def handle_event("start_game", _params, socket) do
-    RoboSoccerPlatformWeb.Endpoint.broadcast_from(self(), @game_start, "start_game", nil)
+    RoboSoccerPlatformWeb.Endpoint.broadcast_from(self(), @game_state, "start_game", nil)
 
     Process.send_after(self(), :tick, 1000)
 
@@ -55,12 +55,15 @@ defmodule RoboSoccerPlatformWeb.Controller do
   end
 
   def handle_event("stop_game", _params, socket) do
+    RoboSoccerPlatformWeb.Endpoint.broadcast_from(self(), @game_state, "stop_game", nil)
+
     socket
     |> assign(game_state: :stopped)
     |> then(&{:noreply, &1})
   end
 
   def handle_event("start_game_again", _params, socket) do
+    RoboSoccerPlatformWeb.Endpoint.broadcast_from(self(), @game_state, "start_game", nil)
     Process.send_after(self(), :tick, 1000)
 
     socket
