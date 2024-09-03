@@ -4,12 +4,13 @@ defmodule RoboSoccerPlatformWeb.Controller do
   import RoboSoccerPlatformWeb.Controller.Components, only: [before_game_view: 1, in_game_view: 1]
 
   alias RoboSoccerPlatformWeb.Controller.Assigns
+  alias RoboSoccerPlatformWeb.Endpoint
 
   @game_state "game_state"
   @controller "controller"
 
   def mount(_params, _session, socket) do
-    RoboSoccerPlatformWeb.Endpoint.subscribe(@controller)
+    Endpoint.subscribe(@controller)
 
     socket
     |> assign(game_state: :before_start)
@@ -43,7 +44,7 @@ defmodule RoboSoccerPlatformWeb.Controller do
   end
 
   def handle_event("start_game", _params, socket) do
-    RoboSoccerPlatformWeb.Endpoint.broadcast_from(self(), @game_state, "start_game", nil)
+    Endpoint.broadcast_from(self(), @game_state, "start_game", nil)
 
     Process.send_after(self(), :tick, 1000)
 
@@ -55,7 +56,7 @@ defmodule RoboSoccerPlatformWeb.Controller do
   end
 
   def handle_event("stop_game", _params, socket) do
-    RoboSoccerPlatformWeb.Endpoint.broadcast_from(self(), @game_state, "stop_game", nil)
+    Endpoint.broadcast_from(self(), @game_state, "stop_game", nil)
 
     socket
     |> assign(game_state: :stopped)
@@ -63,7 +64,7 @@ defmodule RoboSoccerPlatformWeb.Controller do
   end
 
   def handle_event("start_game_again", _params, socket) do
-    RoboSoccerPlatformWeb.Endpoint.broadcast_from(self(), @game_state, "start_game", nil)
+    Endpoint.broadcast_from(self(), @game_state, "start_game", nil)
     Process.send_after(self(), :tick, 1000)
 
     socket
