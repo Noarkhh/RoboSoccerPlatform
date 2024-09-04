@@ -1,15 +1,18 @@
 defmodule RoboSoccerPlatformWeb.Player do
   use RoboSoccerPlatformWeb, :live_view
 
+  @is_game_started "is_game_started"
+
   alias RoboSoccerPlatformWeb.Player.Utils
+  alias RoboSoccerPlatformWeb.Endpoint
 
   def mount(_params, _session, socket) do
-    socket =
-      socket
-      |> assign(id: UUID.uuid4())
-      |> assign(form: %{"errors" => []})
+    Endpoint.subscribe(@is_game_started)
 
-    {:ok, socket}
+    socket
+    |> assign(id: UUID.uuid4())
+    |> assign(form: %{"errors" => []})
+    |> then(&{:ok, &1})
   end
 
   def render(assigns) do
@@ -54,21 +57,40 @@ defmodule RoboSoccerPlatformWeb.Player do
     form = Utils.put_form_errors(socket.assigns.form)
 
     if form["errors"] == [] do
-      socket = assign(socket, form: form)
-
-      path =
-        "/player/steering?" <>
-          URI.encode_query(
-            team: team,
-            username: socket.assigns.form["username"],
-            id: socket.assigns.id
-          )
-
-      {:noreply, push_navigate(socket, to: path)}
-    else
-      {:noreply, assign(socket, form: form)}
+      Endpoint.broadcast_from(self(), @is_game_started, "request", %{id: socket.assigns.id, team: team})
     end
+
+    {:noreply, assign(socket, form: form)}
   end
+
+  # ignore other players requests
+  def handle_info(%{topic: @is_game_started, event: "request"}, socket), do: {:noreply, socket}
+
+  def handle_info(
+    %{topic: @is_game_started, event: "response", payload: %{state: :started, id: id}}, socket
+  ) when id == socket.assigns.id do
+
+    {:noreply, put_flash(socket, :error, "GRA JUZ SIE ZACZELA, POPROS PROWADZACYCH O ZATRZYMANIE GRY")}
+  end
+
+  def handle_info(
+    %{topic: @is_game_started, event: "response", payload: %{id: id, team: team}},
+    socket
+  ) when id == socket.assigns.id do
+
+    path =
+      "/player/steering?" <>
+        URI.encode_query(
+          team: team,
+          username: socket.assigns.form["username"],
+          id: socket.assigns.id
+        )
+
+    {:noreply, push_navigate(socket, to: path)}
+  end
+
+  # ignore responses to other player
+  def handle_info(%{topic: @is_game_started, event: "response"}, socket), do: {:noreply, socket}
 
   attr :team, :any, required: true
   attr :class, :any, default: ""

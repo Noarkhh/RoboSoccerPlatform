@@ -7,9 +7,11 @@ defmodule RoboSoccerPlatformWeb.Controller do
 
   @game_state "game_state"
   @controller "controller"
+  @is_game_started "is_game_started"
 
   def mount(_params, _session, socket) do
     RoboSoccerPlatformWeb.Endpoint.subscribe(@controller)
+    RoboSoccerPlatformWeb.Endpoint.subscribe(@is_game_started)
 
     socket
     |> assign(game_state: :before_start)
@@ -100,7 +102,7 @@ defmodule RoboSoccerPlatformWeb.Controller do
     end
   end
 
-  # allow registering only before game start
+  # disable registering when game is started
   def handle_info(%{topic: @controller, event: "register_player"}, socket) when socket.assigns.game_state == :started do
     {:noreply, socket}
   end
@@ -144,5 +146,16 @@ defmodule RoboSoccerPlatformWeb.Controller do
     else
       {:noreply, socket}
     end
+  end
+
+  def handle_info(%{topic: @is_game_started, event: "request", payload: %{id: id, team: team}}, socket) do
+    RoboSoccerPlatformWeb.Endpoint.broadcast_from(
+      self(),
+      @is_game_started,
+      "response",
+      %{state: socket.assigns.game_state, id: id, team: team}
+    )
+
+    {:noreply, socket}
   end
 end
