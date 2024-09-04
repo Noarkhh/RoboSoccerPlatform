@@ -112,7 +112,7 @@ defmodule RoboSoccerPlatformWeb.Controller do
   end
 
   # allow registering only before game start
-  def handle_info(%{topic: @controller, event: "register_player"}, socket) when socket.assigns.game_state != :before_start do
+  def handle_info(%{topic: @controller, event: "register_player"}, socket) when socket.assigns.game_state == :started do
     {:noreply, socket}
   end
 
