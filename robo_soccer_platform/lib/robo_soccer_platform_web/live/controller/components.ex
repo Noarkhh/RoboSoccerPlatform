@@ -26,7 +26,7 @@ defmodule RoboSoccerPlatformWeb.Controller.Components do
   def in_game_view(assigns) do
     ~H"""
     <div class="flex flex-1">
-      <div class="grid grid-flow-col auto-cols-fr">
+      <div class="grid grid-flow-col auto-cols-fr w-full">
         <div class="flex flex-col flex-1 col-span-2	">
           <.teams red_players={@teams.red.players} green_players={@teams.green.players} />
         </div>
