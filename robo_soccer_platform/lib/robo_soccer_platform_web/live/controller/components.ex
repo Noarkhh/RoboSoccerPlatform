@@ -26,14 +26,15 @@ defmodule RoboSoccerPlatformWeb.Controller.Components do
   def in_game_view(assigns) do
     ~H"""
     <div class="flex flex-1">
-      <.teams red_players={@teams.red.players} green_players={@teams.green.players} />
-
-      <div class="flex flex-col flex-1">
-      </div>
-
-      <div class="flex flex-col flex-1 items-center gap-8">
-        <.time_left seconds={@seconds_left} time_is_over={@time_is_over} />
-        <.score red_goals={@teams.red.goals} green_goals={@teams.green.goals} />
+      <div class="grid grid-flow-col auto-cols-fr">
+        <div class="flex flex-col flex-1 col-span-2	">
+          <.teams red_players={@teams.red.players} green_players={@teams.green.players} />
+        </div>
+        <div></div>
+        <div class="flex flex-col flex-1 items-center gap-8">
+          <.time_left seconds={@seconds_left} time_is_over={@time_is_over} />
+          <.score red_goals={@teams.red.goals} green_goals={@teams.green.goals} />
+        </div>
       </div>
     </div>
 
@@ -90,12 +91,12 @@ defmodule RoboSoccerPlatformWeb.Controller.Components do
 
   defp team(assigns) do
     ~H"""
-    <div class="flex flex-col flex-1">
+    <div class="flex flex-col flex-1 min-w-0">
       <div class={"text-center #{@class} bg-light-orange p-2"}>
         druzyna <%= if @color == :red, do: "czerwona", else: "zielona" %>
       </div>
-      <div class={"flex flex-col flex-1 px-16 py-8 gap-5 #{@container_class}"}>
-        <div class="text-center bg-sky-blue" :for={player <- @players}>
+      <div class={"flex flex-1 flex-col px-8 py-8 gap-2 #{@container_class}"}>
+        <div class={"text-center bg-sky-blue truncate"} :for={player <- @players}>
           <%= player.username %>
         </div>
       </div>
