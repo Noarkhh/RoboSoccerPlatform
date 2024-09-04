@@ -18,7 +18,7 @@ defmodule RoboSoccerPlatformWeb.Controller do
       green: %{players: [], goals: 0},
       red: %{players: [], goals: 0}
     })
-    |> assign(seconds_left: 0)
+    |> assign(seconds_left: 10 * 60)
     |> assign(time_is_over: false)
     |> then(&{:ok, &1})
   end
@@ -43,31 +43,20 @@ defmodule RoboSoccerPlatformWeb.Controller do
   end
 
   def handle_event("start_game", _params, socket) do
-    RoboSoccerPlatformWeb.Endpoint.broadcast_from(self(), @game_state, "start_game", nil)
+    RoboSoccerPlatformWeb.Endpoint.broadcast_from(self(), @game_state, "started", nil)
 
     Process.send_after(self(), :tick, 1000)
 
     socket
-    |> assign(seconds_left: 10 * 60)
-    |> assign(time_is_over: false)
     |> assign(game_state: :started)
     |> then(&{:noreply, &1})
   end
 
   def handle_event("stop_game", _params, socket) do
-    RoboSoccerPlatformWeb.Endpoint.broadcast_from(self(), @game_state, "stop_game", nil)
+    RoboSoccerPlatformWeb.Endpoint.broadcast_from(self(), @game_state, "stopped", nil)
 
     socket
     |> assign(game_state: :stopped)
-    |> then(&{:noreply, &1})
-  end
-
-  def handle_event("start_game_again", _params, socket) do
-    RoboSoccerPlatformWeb.Endpoint.broadcast_from(self(), @game_state, "start_game", nil)
-    Process.send_after(self(), :tick, 1000)
-
-    socket
-    |> assign(game_state: :started)
     |> then(&{:noreply, &1})
   end
 
