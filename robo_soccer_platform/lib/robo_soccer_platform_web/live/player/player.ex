@@ -70,7 +70,7 @@ defmodule RoboSoccerPlatformWeb.Player do
     %{topic: @is_game_started, event: "response", payload: %{state: :started, id: id}}, socket
   ) when id == socket.assigns.id do
 
-    {:noreply, put_flash(socket, :error, "GRA JUZ SIE ZACZELA, POPROS PROWADZACYCH O ZATRZYMANIE GRY")}
+    {:noreply, put_flash(socket, :error, "GRA JUŻ SIĘ ZACZĘŁA, POPROŚ PROWADZĄCYCH O ZATRZYMANIE GRY")}
   end
 
   def handle_info(
