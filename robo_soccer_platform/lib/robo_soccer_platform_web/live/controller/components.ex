@@ -1,6 +1,8 @@
 defmodule RoboSoccerPlatformWeb.Controller.Components do
   use RoboSoccerPlatformWeb, :component
 
+  alias RoboSoccerPlatformWeb.Controller.Utils
+
   attr :teams, :map, required: true
 
   def before_game_view(assigns) do
@@ -26,10 +28,11 @@ defmodule RoboSoccerPlatformWeb.Controller.Components do
   def in_game_view(assigns) do
     ~H"""
     <div class="flex flex-1">
-      <div class="grid grid-flow-col auto-cols-fr">
-        <div class="flex flex-col flex-1 col-span-2	">
+      <div class="grid grid-flow-col auto-cols-fr w-full">
+        <div class="flex flex-col flex-1 col-span-2">
           <.teams red_players={@teams.red.players} green_players={@teams.green.players} />
         </div>
+        <div></div>
         <div></div>
         <div class="flex flex-col flex-1 items-center gap-8">
           <.time_left seconds={@seconds_left} time_is_over={@time_is_over} />
@@ -96,11 +99,31 @@ defmodule RoboSoccerPlatformWeb.Controller.Components do
         druzyna <%= if @color == :red, do: "czerwona", else: "zielona" %>
       </div>
       <div class={"flex flex-1 flex-col px-8 py-8 gap-2 #{@container_class}"}>
-        <div class={"text-center bg-sky-blue truncate"} :for={player <- @players}>
-          <%= player.username %>
+        <div class="flex bg-sky-blue gap-4" :for={player <- @players}>
+          <.player player={player} />
         </div>
       </div>
     </div>
+    """
+  end
+
+  attr :player, :map, required: true
+
+  defp player(assigns) do
+    direction = Utils.point_to_direction(%{x: assigns.player.x, y: assigns.player.y})
+
+    assigns = assign(assigns, direction: direction)
+
+    ~H"""
+    <div class="flex-1 truncate">
+      <div class="truncate">
+        <%= @player.username %>
+      </div>
+    </div>
+
+    <span class="material-icons-outlined">
+      <%= @direction %>
+    </span>
     """
   end
 
