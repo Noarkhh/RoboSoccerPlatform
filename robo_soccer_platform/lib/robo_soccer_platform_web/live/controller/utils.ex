@@ -1,8 +1,12 @@
 defmodule RoboSoccerPlatformWeb.Controller.Utils do
 
-  @type point :: %{x: x :: integer(), y: y :: integer()}
+  @type point :: %{x: x :: float(), y: y :: float()}
 
   @spec point_to_direction(point :: point()) :: String.t()
+  def point_to_direction(%{x: x, y: y}) when x == 0 and y == 0 do
+    "pan_tool" #icon name for no action
+  end
+
   def point_to_direction(%{x: _, y: _} = point) do
     point
     |> point_to_angle()
@@ -25,7 +29,6 @@ defmodule RoboSoccerPlatformWeb.Controller.Utils do
 
   defp angle_to_direction(angle) do
     cond do
-      angle == 0 -> ""
       angle <= 22.5 -> "east"
       angle <= 67.5 -> "north_east"
       angle <= 112.5 -> "north"
