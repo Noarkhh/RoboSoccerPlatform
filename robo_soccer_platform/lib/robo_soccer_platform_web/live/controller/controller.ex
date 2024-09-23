@@ -143,6 +143,22 @@ defmodule RoboSoccerPlatformWeb.Controller do
   def handle_info(
         %{
           topic: @controller,
+          event: "unregister_player",
+          payload: player_id
+        },
+        socket
+      ) do
+    {_player, players} = Map.pop(socket.assigns.players, player_id)
+
+    socket
+    |> assign(players: players)
+    |> Assigns.assign_teams()
+    |> then(&{:noreply, &1})
+  end
+
+  def handle_info(
+        %{
+          topic: @controller,
           event: "joystick_position",
           payload: %{x: x, y: y, id: id}
         },
@@ -208,5 +224,10 @@ defmodule RoboSoccerPlatformWeb.Controller do
     teams = put_in(socket.assigns.teams, [team_atom, :instruction], %{x: x, y: y})
 
     {:noreply, assign(socket, teams: teams)}
+  end
+
+  def handle_info(message, socket) do
+    Logger.warning("Ignoring message: #{inspect(message)}")
+    {:noreply, socket}
   end
 end

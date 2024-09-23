@@ -84,8 +84,27 @@ defmodule RoboSoccerPlatform.PlayerInputAggregator do
 
     Logger.debug("""
     New player registered: #{inspect(player)}
-    All players registered: #{inspect(Enum.map(player_inputs, fn {_id, input} -> input.player end))}
+    Players currently registered: #{inspect(Enum.map(player_inputs, fn {_id, input} -> input.player end))}
     """)
+
+    {:noreply, %{state | player_inputs: player_inputs}}
+  end
+
+  @impl true
+  def handle_info(%{topic: @controller, event: "unregister_player", payload: player_id}, state) do
+    player_inputs =
+      case Map.pop(state.player_inputs, player_id) do
+        {%{player: player}, player_inputs} ->
+          Logger.debug("""
+          Player unregistered: #{inspect(player)}
+          Players currently registered: #{inspect(Enum.map(player_inputs, fn {_id, input} -> input.player end))}
+          """)
+
+          player_inputs
+
+        {nil, player_inputs} ->
+          player_inputs
+      end
 
     {:noreply, %{state | player_inputs: player_inputs}}
   end

@@ -1,4 +1,5 @@
 defmodule RoboSoccerPlatformWeb.Player.Steering do
+  require Logger
   use RoboSoccerPlatformWeb, :live_view
 
   alias RoboSoccerPlatform.Player
@@ -10,14 +11,30 @@ defmodule RoboSoccerPlatformWeb.Player.Steering do
   @game_state "game_state"
   @controller "controller"
 
+  @spec unregister(String.t()) :: :ok
+  def unregister(player_id) do
+    Logger.debug("Unregistering player #{player_id}")
+
+    RoboSoccerPlatformWeb.Endpoint.broadcast_from(
+      self(),
+      @controller,
+      "unregister_player",
+      player_id
+    )
+  end
+
+  @impl true
   def mount(_params, _session, socket) do
     Endpoint.subscribe(@game_state)
 
     {:ok, socket}
   end
 
+  @impl true
   def handle_params(params, _uri, socket) do
     player = %Player{id: params["id"], team: params["team"], username: params["username"]}
+
+    RoboSoccerPlatformWeb.Player.PlayersMonitor.monitor(self(), params["id"])
 
     socket
     |> assign(player: player)
@@ -25,6 +42,7 @@ defmodule RoboSoccerPlatformWeb.Player.Steering do
     |> then(&{:noreply, &1})
   end
 
+  @impl true
   def render(assigns) do
     ~H"""
     <div id="container" phx-hook="Storage">
@@ -40,6 +58,7 @@ defmodule RoboSoccerPlatformWeb.Player.Steering do
     """
   end
 
+  @impl true
   def handle_event("update_joystick_position", %{"x" => x_str, "y" => y_str}, socket) do
     {x, ""} = Integer.parse(x_str)
     {y, ""} = Integer.parse(y_str)
@@ -89,6 +108,7 @@ defmodule RoboSoccerPlatformWeb.Player.Steering do
     |> then(&{:noreply, &1})
   end
 
+  @impl true
   def handle_info(%{topic: @game_state, event: "stop_game"}, socket) do
     socket
     |> store(%{game_state: "stopped"})
