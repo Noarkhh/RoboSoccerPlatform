@@ -15,8 +15,8 @@ defmodule RoboSoccerPlatform.DummyRobot do
   @impl true
   def handle_info({:tcp, _from, data}, state) do
     <<x::float, y::float, _rest::binary>> = data
-    log = "[#{System.os_time(:millisecond)}] x: #{x}, y: #{y}"
-    File.write("dupa.txt", log <> "\n", [:append])
+    log = "[#{System.os_time(:millisecond)}] x: #{x}, y: #{y}\n"
+    File.write("dummy.log", log, [:append])
     IO.puts(log)
     {:noreply, state}
   end
