@@ -8,6 +8,7 @@ defmodule RoboSoccerPlatformWeb.Router do
     plug(:put_root_layout, html: {RoboSoccerPlatformWeb.Layouts, :root})
     plug(:protect_from_forgery)
     plug(:put_secure_browser_headers)
+    plug(:auth)
   end
 
   pipeline :api do
@@ -42,5 +43,11 @@ defmodule RoboSoccerPlatformWeb.Router do
 
       live_dashboard("/dashboard", metrics: RoboSoccerPlatformWeb.Telemetry)
     end
+  end
+
+  defp auth(conn, _opts) do
+    username = System.fetch_env!("CONTROLLER_USERNAME")
+    password = System.fetch_env!("CONTROLLER_PASSWORD")
+    Plug.BasicAuth.basic_auth(conn, username: username, password: password)
   end
 end
