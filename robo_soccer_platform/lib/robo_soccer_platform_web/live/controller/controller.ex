@@ -17,6 +17,7 @@ defmodule RoboSoccerPlatformWeb.Controller do
     Endpoint.subscribe(@is_game_started)
 
     socket
+    |> assign(room_code: "1234")
     |> assign(game_state: :before_start)
     |> assign(players: %{})
     |> assign(teams: %{
@@ -34,6 +35,7 @@ defmodule RoboSoccerPlatformWeb.Controller do
       <.before_game_view
         :if={@game_state == :before_start}
         teams={@teams}
+        room_code={@room_code}
       />
 
       <.in_game_view
@@ -42,6 +44,7 @@ defmodule RoboSoccerPlatformWeb.Controller do
         game_state={@game_state}
         seconds_left={@seconds_left}
         time_is_over={@time_is_over}
+        room_code={@room_code}
       />
     </div>
     """
@@ -158,6 +161,18 @@ defmodule RoboSoccerPlatformWeb.Controller do
     else
       {:noreply, socket}
     end
+  end
+
+  # handle wrong room code passed
+  def handle_info(%{topic: @is_game_started, event: "request", payload: %{id: id, code: code}}, socket) when code != socket.assigns.room_code do
+    Endpoint.broadcast_from(
+      self(),
+      @is_game_started,
+      "response",
+      %{state: socket.assigns.game_state, id: id, code: :error}
+    )
+
+    {:noreply, socket}
   end
 
   def handle_info(%{topic: @is_game_started, event: "request", payload: %{id: id, team: team}}, socket) do
