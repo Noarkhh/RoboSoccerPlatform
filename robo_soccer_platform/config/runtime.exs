@@ -16,6 +16,21 @@ import Config
 #
 # Alternatively, you can use `mix phx.gen.release` to generate a `bin/server`
 # script that automatically sets the env var above.
+config :robo_soccer_platform, RoboSoccerPlatform.PlayerInputAggregator,
+  aggregation_interval_ms: 10,
+  aggregation_function_name: :average,
+  speed_coefficient: 0.5,
+  robot_configs: %{
+    "red" => %{
+      robot_ip_address: System.fetch_env!("RED_ROBOT_IP"),
+      local_port: System.fetch_env!("RED_ROBOT_LOCAL_PORT")
+    },
+    "green" => %{
+      robot_ip_address: System.fetch_env!("GREEN_ROBOT_IP"),
+      local_port: System.fetch_env!("GREEN_ROBOT_LOCAL_PORT")
+    }
+  }
+
 if System.get_env("PHX_SERVER") do
   config :robo_soccer_platform, RoboSoccerPlatformWeb.Endpoint, server: true
 end

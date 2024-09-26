@@ -9,13 +9,15 @@ defmodule RoboSoccerPlatform.PlayerInputAggregator do
   @controller_robots_only "controller_robots_only"
 
   @default_aggregation_interval_ms 100
-  @default_aggregation_function_name :median
+  @default_aggregation_function_name :average
+  @default_speed_coefficient 1.0
 
-  @type robot_config :: %{robot_ip_address: :inet.ip4_address(), local_port: :inet.port_number()}
+  @type robot_config :: %{robot_ip_address: String.t(), local_port: String.t()}
   @type option ::
           {:aggregation_interval_ms, pos_integer()}
           | {:aggregation_function_name, atom()}
           | {:robot_configs, %{RoboSoccerPlatform.team() => robot_config()}}
+          | {:speed_coefficient, float()}
   @type options :: [option()]
 
   defmodule State do
@@ -30,7 +32,12 @@ defmodule RoboSoccerPlatform.PlayerInputAggregator do
             aggregation_timer: reference() | nil
           }
 
-    @enforce_keys [:aggregation_interval_ms, :aggregation_function, :robot_connections]
+    @enforce_keys [
+      :aggregation_interval_ms,
+      :aggregation_function,
+      :robot_connections,
+      :speed_coefficient
+    ]
     defstruct @enforce_keys ++
                 [
                   player_inputs: %{},
@@ -112,8 +119,9 @@ defmodule RoboSoccerPlatform.PlayerInputAggregator do
   @impl true
   def handle_info(
         %{topic: @controller, event: "joystick_position", payload: %{x: x, y: y, id: id}},
-        %State{game_started: true} = state
-      ) do
+        %State{game_started: true, player_inputs: player_inputs} = state
+      )
+      when is_map_key(player_inputs, id) do
     player_input = %{state.player_inputs[id] | x: x, y: y}
     state = %{state | player_inputs: %{state.player_inputs | id => player_input}}
     {:noreply, state}
@@ -124,10 +132,17 @@ defmodule RoboSoccerPlatform.PlayerInputAggregator do
     Map.values(state.player_inputs)
     |> Enum.group_by(& &1.player.team)
     |> Enum.each(fn {team, player_inputs} ->
-      instruction = aggregate_player_inputs(player_inputs, state.aggregation_function)
+      instruction =
+        aggregate_player_inputs(
+          player_inputs,
+          state.aggregation_function,
+          state.speed_coefficient
+        )
 
       RoboSoccerPlatformWeb.Endpoint.broadcast_from(
-        self(), @controller_robots_only, "new_instructions",
+        self(),
+        @controller_robots_only,
+        "new_instructions",
         %{x: instruction.x, y: instruction.y, team: team}
       )
 
@@ -156,10 +171,16 @@ defmodule RoboSoccerPlatform.PlayerInputAggregator do
     aggregation_function_name =
       Keyword.get(opts, :aggregation_function_name, @default_aggregation_function_name)
 
+    speed_coefficient =
+      Keyword.get(opts, :speed_coefficient, @default_speed_coefficient)
+
     robot_connections =
       opts
       |> Keyword.fetch!(:robot_configs)
       |> Map.new(fn {team, %{robot_ip_address: ip_address, local_port: local_port}} ->
+        {:ok, ip_address} = ip_address |> String.to_charlist() |> :inet.parse_address()
+        {local_port, ""} = Integer.parse(local_port)
+
         case RobotConnection.start(team, local_port, ip_address) do
           {:ok, pid} ->
             Logger.info("Started RobotConnection for team #{team} with pid #{inspect(pid)}")
@@ -173,17 +194,23 @@ defmodule RoboSoccerPlatform.PlayerInputAggregator do
     %State{
       robot_connections: robot_connections,
       aggregation_interval_ms: aggregation_interval_ms,
+      speed_coefficient: speed_coefficient,
       aggregation_function:
         Function.capture(RoboSoccerPlatform.AggregationFunctions, aggregation_function_name, 1)
     }
   end
 
-  @spec aggregate_player_inputs([State.player_input()], ([integer()] -> float())) ::
+  @spec aggregate_player_inputs([State.player_input()], ([integer()] -> float()), float()) ::
           %{x: float(), y: float()}
-  defp aggregate_player_inputs(player_inputs, aggregation_function) do
+  defp aggregate_player_inputs(player_inputs, aggregation_function, speed_coefficient) do
     %{
-      x: Enum.map(player_inputs, & &1.x) |> then(aggregation_function),
-      y: Enum.map(player_inputs, & &1.y) |> then(aggregation_function)
+      x:
+        Enum.map(player_inputs, & &1.x)
+        |> then(aggregation_function),
+      y:
+        Enum.map(player_inputs, & &1.y)
+        |> then(aggregation_function)
+        |> Kernel.*(speed_coefficient)
     }
   end
 

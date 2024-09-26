@@ -98,9 +98,25 @@ defmodule RoboSoccerPlatform.RobotConnection do
   end
 
   @impl true
-  def handle_info({:tcp_closed, _socket}, state) do
+  def handle_info({:tcp_closed, socket}, %{socket: socket} = state) do
     Logger.warning("Connection with #{state.team} robot severed, retrying")
     {:noreply, state, {:continue, :initialize_connection}}
+  end
+
+  @impl true
+  def handle_info({:tcp_error, socket, error}, %{socket: socket} = state) do
+    Logger.warning(
+      "connection with #{state.team} robot severed with error #{inspect(error)}, retrying"
+    )
+
+    {:noreply, state, {:continue, :initialize_connection}}
+  end
+
+  @impl true
+  def handle_info(message, state) do
+    Logger.warning("Ignoring message: #{message}")
+
+    {:noreply, state}
   end
 
   @impl true
