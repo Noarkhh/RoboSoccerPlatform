@@ -10,6 +10,7 @@ defmodule RoboSoccerPlatformWeb.Controller do
   @controller "controller"
   @is_game_started "is_game_started"
   @controller_robots_only "controller_robots_only"
+  @disconnect "disconnect"
 
   def mount(_params, _session, socket) do
     Endpoint.subscribe(@controller)
@@ -136,6 +137,19 @@ defmodule RoboSoccerPlatformWeb.Controller do
     |> assign(players: players)
     |> Assigns.assign_teams()
     |> then(&{:noreply, &1})
+  end
+
+  def handle_info(
+        %{
+          topic: @controller,
+          event: "joystick_position",
+          payload: %{id: id, room_code: room_code}
+        },
+        socket
+      ) when room_code != socket.assigns.room_code do
+    Endpoint.broadcast_from(self(), @disconnect, "disconnect", %{id: id})
+
+    {:noreply, socket}
   end
 
   def handle_info(
