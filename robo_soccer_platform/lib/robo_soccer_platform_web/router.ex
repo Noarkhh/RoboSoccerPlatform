@@ -8,11 +8,21 @@ defmodule RoboSoccerPlatformWeb.Router do
     plug(:put_root_layout, html: {RoboSoccerPlatformWeb.Layouts, :root})
     plug(:protect_from_forgery)
     plug(:put_secure_browser_headers)
+  end
+
+  pipeline :controller do
+    plug(:browser)
     plug(:auth)
   end
 
   pipeline :api do
     plug(:accepts, ["json"])
+  end
+
+  scope "/controller", RoboSoccerPlatformWeb do
+    pipe_through(:controller)
+
+    live "/", Controller
   end
 
   scope "/", RoboSoccerPlatformWeb do
@@ -21,7 +31,7 @@ defmodule RoboSoccerPlatformWeb.Router do
     get "/", PageController, :home
     live "/player", Player
     live "/player/steering", Player.Steering
-    live "/controller", Controller
+    # live "/controller", Controller
   end
 
   # Other scopes may use custom stacks.
