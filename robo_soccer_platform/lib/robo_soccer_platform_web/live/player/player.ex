@@ -24,12 +24,20 @@ defmodule RoboSoccerPlatformWeb.Player do
         phx-submit="submit"
         class="flex flex-col gap-20 items-center h-full"
       >
-        <div class="flex max-w-[70%] w-max ">
+        <div class="flex flex-col max-w-[70%] w-max">
           <.input
             phx-debounce="blur"
             name="username"
             value=""
             label="NAZWA GRACZA"
+            errors={@form["errors"]}
+            label_class="text-center"
+          />
+          <.input
+            phx-debounce="500"
+            name="room_code"
+            value=""
+            label="NUMER POKOJU"
             errors={@form["errors"]}
             label_class="text-center"
           />
@@ -47,8 +55,11 @@ defmodule RoboSoccerPlatformWeb.Player do
     """
   end
 
-  def handle_event("change", %{"username" => username}, socket) do
-    form = Map.put(socket.assigns.form, "username", username)
+  def handle_event("change", %{"username" => username, "room_code" => room_code}, socket) do
+    form =
+      socket.assigns.form
+      |> Map.put("username", username)
+      |> Map.put("room_code", room_code)
 
     {:noreply, assign(socket, form: form)}
   end
@@ -57,7 +68,12 @@ defmodule RoboSoccerPlatformWeb.Player do
     form = Utils.put_form_errors(socket.assigns.form)
 
     if form["errors"] == [] do
-      Endpoint.broadcast_from(self(), @is_game_started, "request", %{id: socket.assigns.id, team: team})
+      Endpoint.broadcast_from(
+        self(),
+        @is_game_started,
+        "request",
+        %{id: socket.assigns.id, team: team, code: socket.assigns.form["room_code"]}
+      )
     end
 
     {:noreply, assign(socket, form: form)}
@@ -71,6 +87,14 @@ defmodule RoboSoccerPlatformWeb.Player do
   ) when id == socket.assigns.id do
 
     {:noreply, put_flash(socket, :error, "GRA JUŻ SIĘ ZACZĘŁA, POPROŚ PROWADZĄCYCH O ZATRZYMANIE GRY")}
+  end
+
+  def handle_info(
+    %{topic: @is_game_started, event: "response", payload: %{code: :error, id: id}},
+    socket
+  ) when id == socket.assigns.id do
+
+    {:noreply, put_flash(socket, :error, "ZŁY NUMER POKOJU, SPRÓBUJ PONOWNIE")}
   end
 
   def handle_info(

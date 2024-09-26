@@ -4,9 +4,14 @@ defmodule RoboSoccerPlatformWeb.Controller.Components do
   alias RoboSoccerPlatformWeb.Controller.Utils
 
   attr :teams, :map, required: true
+  attr :room_code, :string, required: true
 
   def before_game_view(assigns) do
     ~H"""
+    <div class="text-center text-3xl">
+      ROOM CODE: <%= @room_code %>
+    </div>
+
     <.teams red_players={@teams.red.players} green_players={@teams.green.players} />
 
     <div class="flex justify-center">
@@ -24,6 +29,7 @@ defmodule RoboSoccerPlatformWeb.Controller.Components do
   attr :game_state, :atom, required: true
   attr :seconds_left, :integer, required: true
   attr :time_is_over, :boolean, required: true
+  attr :room_code, :string, required: true
 
   def in_game_view(assigns) do
     green_direction = Utils.point_to_direction(%{x: assigns.teams.green.instruction.x, y: assigns.teams.green.instruction.y})
@@ -41,7 +47,9 @@ defmodule RoboSoccerPlatformWeb.Controller.Components do
           <.teams red_players={@teams.red.players} green_players={@teams.green.players} />
         </div>
 
-        <div class="col-span-2"> </div>
+        <div class="col-span-2 text-center text-3xl">
+          ROOM CODE: <%= @room_code %>
+        </div>
 
         <div class="flex flex-col flex-1 items-center gap-8">
           <.time_left seconds={@seconds_left} time_is_over={@time_is_over} />
