@@ -7,14 +7,6 @@
 # General application configuration
 import Config
 
-config :robo_soccer_platform, RoboSoccerPlatform.PlayerInputAggregator,
-  aggregation_interval_ms: 10,
-  aggregation_function_name: :median,
-  robot_configs: %{
-    "red" => %{robot_ip_address: {192, 168, 43, 62}, local_port: 20000},
-    "green" => %{robot_ip_address: {127, 0, 0, 1}, local_port: 20001}
-  }
-
 config :robo_soccer_platform,
   generators: [timestamp_type: :utc_datetime]
 
