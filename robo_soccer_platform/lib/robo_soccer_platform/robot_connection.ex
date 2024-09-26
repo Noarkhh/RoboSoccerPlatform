@@ -114,7 +114,7 @@ defmodule RoboSoccerPlatform.RobotConnection do
 
   @impl true
   def handle_info(message, state) do
-    Logger.warning("Ignoring message: #{message}")
+    Logger.warning("Ignoring message: #{inspect(message)}")
 
     {:noreply, state}
   end
