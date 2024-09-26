@@ -21,6 +21,7 @@ defmodule RoboSoccerPlatformWeb.Player.Steering do
 
     socket
     |> assign(player: player)
+    |> assign(room_code: params["room_code"])
     |> restore()
     |> then(&{:noreply, &1})
   end

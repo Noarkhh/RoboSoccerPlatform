@@ -17,7 +17,7 @@ defmodule RoboSoccerPlatformWeb.Controller do
     Endpoint.subscribe(@is_game_started)
 
     socket
-    |> assign(room_code: "1234")
+    |> assign(room_code: get_random_room_code())
     |> assign(game_state: :before_start)
     |> assign(players: %{})
     |> assign(teams: %{
@@ -25,7 +25,6 @@ defmodule RoboSoccerPlatformWeb.Controller do
       red: %{players: [], goals: 0, instruction: %{x: 0, y: 0}}
     })
     |> assign(seconds_left: 10 * 60)
-    |> assign(time_is_over: false)
     |> then(&{:ok, &1})
   end
 
@@ -43,7 +42,6 @@ defmodule RoboSoccerPlatformWeb.Controller do
         teams={@teams}
         game_state={@game_state}
         seconds_left={@seconds_left}
-        time_is_over={@time_is_over}
         room_code={@room_code}
       />
     </div>
@@ -110,9 +108,11 @@ defmodule RoboSoccerPlatformWeb.Controller do
       |> assign(seconds_left: seconds_left)
       |> then(&{:noreply, &1})
     else
+      Endpoint.broadcast_from(self(), @game_state, "stop_game", nil)
+
       socket
-      |> assign(seconds_left: seconds_left)
-      |> assign(time_is_over: true)
+      |> assign(game_state: :stopped)
+      |> assign(seconds_left: 10 * 60)
       |> then(&{:noreply, &1})
     end
   end
@@ -192,5 +192,10 @@ defmodule RoboSoccerPlatformWeb.Controller do
     teams = put_in(socket.assigns.teams, [team_atom, :instruction], %{x: x, y: y})
 
     {:noreply, assign(socket, teams: teams)}
+  end
+
+  defp get_random_room_code() do
+    Enum.random(10000..99999)
+    |> to_string()
   end
 end
