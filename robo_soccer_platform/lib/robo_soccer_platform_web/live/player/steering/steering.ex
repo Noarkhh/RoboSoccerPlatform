@@ -46,11 +46,11 @@ defmodule RoboSoccerPlatformWeb.Player.Steering do
     {:noreply, socket}
   end
 
-  def handle_info(%{topic: @game_state, event: "start_game"}, socket) do
+  def handle_info(%{topic: @game_state, event: "started"}, socket) do
     {:noreply, push_event(socket, "game_started", %{})}
   end
 
-  def handle_info(%{topic: @game_state, event: "stop_game"}, socket) do
+  def handle_info(%{topic: @game_state, event: "stopped"}, socket) do
     {:noreply, push_event(socket, "game_stopped", %{})}
   end
 end

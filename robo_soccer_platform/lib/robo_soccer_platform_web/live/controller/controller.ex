@@ -7,11 +7,13 @@ defmodule RoboSoccerPlatformWeb.Controller do
 
   @game_state "game_state"
   @controller "controller"
+  @is_game_started "is_game_started"
   @controller_robots_only "controller_robots_only"
 
   def mount(_params, _session, socket) do
     RoboSoccerPlatformWeb.Endpoint.subscribe(@controller)
     RoboSoccerPlatformWeb.Endpoint.subscribe(@controller_robots_only)
+    RoboSoccerPlatformWeb.Endpoint.subscribe(@is_game_started)
 
     socket
     |> assign(game_state: :before_start)
@@ -20,7 +22,7 @@ defmodule RoboSoccerPlatformWeb.Controller do
       green: %{players: [], goals: 0, instruction: %{x: 0, y: 0}},
       red: %{players: [], goals: 0, instruction: %{x: 0, y: 0}}
     })
-    |> assign(seconds_left: 0)
+    |> assign(seconds_left: 10 * 60)
     |> assign(time_is_over: false)
     |> then(&{:ok, &1})
   end
@@ -45,31 +47,20 @@ defmodule RoboSoccerPlatformWeb.Controller do
   end
 
   def handle_event("start_game", _params, socket) do
-    RoboSoccerPlatformWeb.Endpoint.broadcast_from(self(), @game_state, "start_game", nil)
+    RoboSoccerPlatformWeb.Endpoint.broadcast_from(self(), @game_state, "started", nil)
 
     Process.send_after(self(), :tick, 1000)
 
     socket
-    |> assign(seconds_left: 10 * 60)
-    |> assign(time_is_over: false)
     |> assign(game_state: :started)
     |> then(&{:noreply, &1})
   end
 
   def handle_event("stop_game", _params, socket) do
-    RoboSoccerPlatformWeb.Endpoint.broadcast_from(self(), @game_state, "stop_game", nil)
+    RoboSoccerPlatformWeb.Endpoint.broadcast_from(self(), @game_state, "stopped", nil)
 
     socket
     |> assign(game_state: :stopped)
-    |> then(&{:noreply, &1})
-  end
-
-  def handle_event("start_game_again", _params, socket) do
-    RoboSoccerPlatformWeb.Endpoint.broadcast_from(self(), @game_state, "start_game", nil)
-    Process.send_after(self(), :tick, 1000)
-
-    socket
-    |> assign(game_state: :started)
     |> then(&{:noreply, &1})
   end
 
@@ -113,7 +104,7 @@ defmodule RoboSoccerPlatformWeb.Controller do
     end
   end
 
-  # allow registering only before game start
+  # disable registering when game is started
   def handle_info(%{topic: @controller, event: "register_player"}, socket) when socket.assigns.game_state == :started do
     {:noreply, socket}
   end
@@ -157,6 +148,17 @@ defmodule RoboSoccerPlatformWeb.Controller do
     else
       {:noreply, socket}
     end
+  end
+
+  def handle_info(%{topic: @is_game_started, event: "request", payload: %{id: id, team: team}}, socket) do
+    RoboSoccerPlatformWeb.Endpoint.broadcast_from(
+      self(),
+      @is_game_started,
+      "response",
+      %{state: socket.assigns.game_state, id: id, team: team}
+    )
+
+    {:noreply, socket}
   end
 
   def handle_info(%{topic: @controller_robots_only, event: "new_instructions", payload: %{x: x, y: y, team: team}}, socket) do

@@ -53,7 +53,7 @@ defmodule RoboSoccerPlatformWeb.Controller.Components do
 
     <div class="flex justify-center gap-32">
       <.button
-        phx-click={if @game_state == :started, do: "stop_game", else: "start_game_again" }
+        phx-click={if @game_state == :started, do: "stop_game", else: "start_game" }
         class="bg-white !text-black !text-4xl"
       >
         <%= if @game_state == :started, do: "STOP", else: "START" %>
