@@ -4,6 +4,7 @@ defmodule RoboSoccerPlatformWeb.Controller do
   import RoboSoccerPlatformWeb.Controller.Components, only: [before_game_view: 1, in_game_view: 1]
 
   alias RoboSoccerPlatformWeb.Controller.Assigns
+  alias RoboSoccerPlatformWeb.Endpoint
 
   @game_state "game_state"
   @controller "controller"
@@ -11,9 +12,9 @@ defmodule RoboSoccerPlatformWeb.Controller do
   @controller_robots_only "controller_robots_only"
 
   def mount(_params, _session, socket) do
-    RoboSoccerPlatformWeb.Endpoint.subscribe(@controller)
-    RoboSoccerPlatformWeb.Endpoint.subscribe(@controller_robots_only)
-    RoboSoccerPlatformWeb.Endpoint.subscribe(@is_game_started)
+    Endpoint.subscribe(@controller)
+    Endpoint.subscribe(@controller_robots_only)
+    Endpoint.subscribe(@is_game_started)
 
     socket
     |> assign(game_state: :before_start)
@@ -47,7 +48,7 @@ defmodule RoboSoccerPlatformWeb.Controller do
   end
 
   def handle_event("start_game", _params, socket) do
-    RoboSoccerPlatformWeb.Endpoint.broadcast_from(self(), @game_state, "started", nil)
+    Endpoint.broadcast_from(self(), @game_state, "start_game", nil)
 
     Process.send_after(self(), :tick, 1000)
 
@@ -57,10 +58,19 @@ defmodule RoboSoccerPlatformWeb.Controller do
   end
 
   def handle_event("stop_game", _params, socket) do
-    RoboSoccerPlatformWeb.Endpoint.broadcast_from(self(), @game_state, "stopped", nil)
+    Endpoint.broadcast_from(self(), @game_state, "stop_game", nil)
 
     socket
     |> assign(game_state: :stopped)
+    |> then(&{:noreply, &1})
+  end
+
+  def handle_event("start_game_again", _params, socket) do
+    Endpoint.broadcast_from(self(), @game_state, "start_game", nil)
+    Process.send_after(self(), :tick, 1000)
+
+    socket
+    |> assign(game_state: :started)
     |> then(&{:noreply, &1})
   end
 
@@ -151,7 +161,7 @@ defmodule RoboSoccerPlatformWeb.Controller do
   end
 
   def handle_info(%{topic: @is_game_started, event: "request", payload: %{id: id, team: team}}, socket) do
-    RoboSoccerPlatformWeb.Endpoint.broadcast_from(
+    Endpoint.broadcast_from(
       self(),
       @is_game_started,
       "response",

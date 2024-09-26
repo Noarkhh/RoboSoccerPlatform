@@ -52,6 +52,26 @@ Hooks.JoyStick = {
   }
 }
 
+// inspired by https://fly.io/phoenix-files/saving-and-restoring-liveview-state/
+Hooks.Storage = {
+  mounted() {
+    const view = this;
+
+    this.handleEvent("store", (obj) => {
+      localStorage.setItem(obj.key, obj.data)
+    })
+
+    this.handleEvent("clear", (obj) => {
+      localStorage.removeItem(obj.key)
+    })
+
+    this.handleEvent("restore", (obj) => {
+      var data = localStorage.getItem(obj.key)
+      view.pushEvent(obj.event, data)
+    })
+  },
+}
+
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 let liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
