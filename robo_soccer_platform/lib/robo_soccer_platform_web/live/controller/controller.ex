@@ -8,17 +8,19 @@ defmodule RoboSoccerPlatformWeb.Controller do
   @game_state "game_state"
   @controller "controller"
   @is_game_started "is_game_started"
+  @controller_robots_only "controller_robots_only"
 
   def mount(_params, _session, socket) do
     RoboSoccerPlatformWeb.Endpoint.subscribe(@controller)
+    RoboSoccerPlatformWeb.Endpoint.subscribe(@controller_robots_only)
     RoboSoccerPlatformWeb.Endpoint.subscribe(@is_game_started)
 
     socket
     |> assign(game_state: :before_start)
     |> assign(players: %{})
     |> assign(teams: %{
-      green: %{players: [], goals: 0},
-      red: %{players: [], goals: 0}
+      green: %{players: [], goals: 0, instruction: %{x: 0, y: 0}},
+      red: %{players: [], goals: 0, instruction: %{x: 0, y: 0}}
     })
     |> assign(seconds_left: 10 * 60)
     |> assign(time_is_over: false)
@@ -157,5 +159,13 @@ defmodule RoboSoccerPlatformWeb.Controller do
     )
 
     {:noreply, socket}
+  end
+
+  def handle_info(%{topic: @controller_robots_only, event: "new_instructions", payload: %{x: x, y: y, team: team}}, socket) do
+    team_atom = String.to_existing_atom(team)
+
+    teams = put_in(socket.assigns.teams, [team_atom, :instruction], %{x: x, y: y})
+
+    {:noreply, assign(socket, teams: teams)}
   end
 end
