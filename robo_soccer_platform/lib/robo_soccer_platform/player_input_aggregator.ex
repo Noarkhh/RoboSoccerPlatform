@@ -6,6 +6,7 @@ defmodule RoboSoccerPlatform.PlayerInputAggregator do
 
   @controller "controller"
   @game_state "game_state"
+  @controller_robots_only "controller_robots_only"
 
   @default_aggregation_interval_ms 100
   @default_aggregation_function_name :median
@@ -52,7 +53,7 @@ defmodule RoboSoccerPlatform.PlayerInputAggregator do
   end
 
   @impl true
-  def handle_info(%{topic: @game_state, event: "start_game"}, state) do
+  def handle_info(%{topic: @game_state, event: "started"}, state) do
     {:noreply,
      %{
        state
@@ -62,7 +63,7 @@ defmodule RoboSoccerPlatform.PlayerInputAggregator do
   end
 
   @impl true
-  def handle_info(%{topic: @game_state, event: "stop_game"}, state) do
+  def handle_info(%{topic: @game_state, event: "stopped"}, state) do
     Map.values(state.player_inputs)
     |> Enum.group_by(& &1.player.team)
     |> Enum.each(fn {team, _player_inputs} ->
@@ -105,6 +106,12 @@ defmodule RoboSoccerPlatform.PlayerInputAggregator do
     |> Enum.group_by(& &1.player.team)
     |> Enum.each(fn {team, player_inputs} ->
       instruction = aggregate_player_inputs(player_inputs, state.aggregation_function)
+
+      RoboSoccerPlatformWeb.Endpoint.broadcast_from(
+        self(), @controller_robots_only, "new_instructions",
+        %{x: instruction.x, y: instruction.y, team: team}
+      )
+
       RobotConnection.send_instruction(state.robot_connections[team], instruction)
     end)
 
