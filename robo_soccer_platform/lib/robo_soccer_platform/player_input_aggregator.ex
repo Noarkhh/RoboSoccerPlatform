@@ -46,6 +46,11 @@ defmodule RoboSoccerPlatform.PlayerInputAggregator do
                 ]
   end
 
+  @spec is_game_started() :: boolean()
+  def is_game_started() do
+    GenServer.call(:aggregator, :is_game_started)
+  end
+
   @spec start_link(options()) :: GenServer.on_start()
   def start_link(opts) do
     GenServer.start_link(__MODULE__, opts)
@@ -55,8 +60,14 @@ defmodule RoboSoccerPlatform.PlayerInputAggregator do
   def init(opts) do
     RoboSoccerPlatformWeb.Endpoint.subscribe(@controller)
     RoboSoccerPlatformWeb.Endpoint.subscribe(@game_state)
+    Process.register(self(), :aggregator)
 
     {:ok, init_state(opts)}
+  end
+
+  @impl true
+  def handle_call(:is_game_started, _from, state) do
+    {:reply, state.game_started, state}
   end
 
   @impl true
