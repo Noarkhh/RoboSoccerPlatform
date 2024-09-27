@@ -8,8 +8,14 @@ defmodule RoboSoccerPlatformWeb.Controller.Components do
 
   def before_game_view(assigns) do
     ~H"""
-    <div class="text-center text-3xl">
-      Kod Pokoju: <%= @room_code %>
+    <div class="flex justify-center gap-40">
+      <img src="images/qr_wifi.png" class="w-[200px]">
+
+      <div class="text-center text-3xl flex flex-col justify-center">
+        Kod Pokoju: <%= @room_code %>
+      </div>
+
+      <img src="images/qr_player_link.png" class="w-[200px]">
     </div>
 
     <.teams red_players={@teams.red.players} green_players={@teams.green.players} />
