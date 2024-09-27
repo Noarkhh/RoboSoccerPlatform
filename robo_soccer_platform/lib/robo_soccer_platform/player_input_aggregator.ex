@@ -83,10 +83,7 @@ defmodule RoboSoccerPlatform.PlayerInputAggregator do
   end
 
   @impl true
-  def handle_info(
-        %{topic: @controller, event: "register_player", payload: player},
-        %State{game_started: false} = state
-      ) do
+  def handle_info(%{topic: @controller, event: "register_player", payload: player}, state) do
     player_inputs = Map.put(state.player_inputs, player.id, %{player: player, x: 0.0, y: 0.0})
 
     Logger.debug("""

@@ -120,12 +120,6 @@ defmodule RoboSoccerPlatformWeb.Controller do
     end
   end
 
-  # disable registering when game is started
-  def handle_info(%{topic: @controller, event: "register_player"}, socket)
-      when socket.assigns.game_state == :started do
-    {:noreply, socket}
-  end
-
   def handle_info(
         %{
           topic: @controller,
@@ -166,7 +160,8 @@ defmodule RoboSoccerPlatformWeb.Controller do
           payload: %{id: id, room_code: room_code}
         },
         socket
-      ) when room_code != socket.assigns.room_code do
+      )
+      when room_code != socket.assigns.room_code do
     Endpoint.broadcast_from(self(), @disconnect, "disconnect", %{id: id})
 
     {:noreply, socket}
@@ -248,7 +243,7 @@ defmodule RoboSoccerPlatformWeb.Controller do
   end
 
   defp get_random_room_code() do
-    Enum.random(10000..99999)
+    Enum.random(1000..9999)
     |> to_string()
   end
 end

@@ -38,7 +38,10 @@ defmodule RoboSoccerPlatformWeb.Player.Steering do
   def handle_params(params, _uri, socket) do
     player = %Player{id: params["id"], team: params["team"], username: params["username"]}
 
-    if not socket.assigns.monitored, do: RoboSoccerPlatformWeb.Player.PlayersMonitor.monitor(self(), params["id"])
+    if not socket.assigns.monitored,
+      do: RoboSoccerPlatformWeb.Player.PlayersMonitor.monitor(self(), params["id"])
+
+    Endpoint.broadcast_from(self(), @controller, "register_player", player)
 
     socket
     |> assign(monitored: true)
@@ -104,7 +107,6 @@ defmodule RoboSoccerPlatformWeb.Player.Steering do
   end
 
   def handle_event("restoreState", _token_data, socket) do
-    Endpoint.broadcast_from(self(), @controller, "register_player", socket.assigns.player)
     {:noreply, socket}
   end
 
@@ -123,11 +125,12 @@ defmodule RoboSoccerPlatformWeb.Player.Steering do
     |> then(&{:noreply, &1})
   end
 
-  def handle_info(%{topic: @disconnect, event: "disconnect", payload: %{id: id}}, socket) when id != socket.assigns.id do
+  def handle_info(%{topic: @disconnect, event: "disconnect", payload: %{id: id}}, socket)
+      when id != socket.assigns.id do
     {:noreply, socket}
   end
 
-  def handle_info(%{topic: @disconnect, event: "disconnect", payload: %{id: id}}, socket) do
+  def handle_info(%{topic: @disconnect, event: "disconnect"}, socket) do
     {:noreply, push_navigate(socket, to: "/player")}
   end
 
