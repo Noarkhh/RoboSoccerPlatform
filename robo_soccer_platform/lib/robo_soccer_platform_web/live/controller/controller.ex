@@ -9,14 +9,14 @@ defmodule RoboSoccerPlatformWeb.Controller do
 
   @game_state "game_state"
   @controller "controller"
-  @is_game_started "is_game_started"
+  @join_game "join_game"
   @controller_robots_only "controller_robots_only"
   @disconnect "disconnect"
 
   def mount(_params, _session, socket) do
     Endpoint.subscribe(@controller)
     Endpoint.subscribe(@controller_robots_only)
-    Endpoint.subscribe(@is_game_started)
+    Endpoint.subscribe(@join_game)
 
     Endpoint.broadcast_from(self(), @game_state, "stop_game", nil)
 
@@ -120,12 +120,6 @@ defmodule RoboSoccerPlatformWeb.Controller do
     end
   end
 
-  # disable registering when game is started
-  def handle_info(%{topic: @controller, event: "register_player"}, socket)
-      when socket.assigns.game_state == :started do
-    {:noreply, socket}
-  end
-
   def handle_info(
         %{
           topic: @controller,
@@ -199,29 +193,29 @@ defmodule RoboSoccerPlatformWeb.Controller do
 
   # handle wrong room code passed
   def handle_info(
-        %{topic: @is_game_started, event: "request", payload: %{id: id, code: code}},
+        %{topic: @join_game, event: "request", payload: %{id: id, code: code}},
         socket
       )
       when code != socket.assigns.room_code do
     Endpoint.broadcast_from(
       self(),
-      @is_game_started,
+      @join_game,
       "response",
-      %{state: socket.assigns.game_state, id: id, code: :error}
+      %{id: id, code: :error}
     )
 
     {:noreply, socket}
   end
 
   def handle_info(
-        %{topic: @is_game_started, event: "request", payload: %{id: id, team: team}},
+        %{topic: @join_game, event: "request", payload: %{id: id, team: team}},
         socket
       ) do
     Endpoint.broadcast_from(
       self(),
-      @is_game_started,
+      @join_game,
       "response",
-      %{state: socket.assigns.game_state, id: id, team: team}
+      %{id: id, team: team}
     )
 
     {:noreply, socket}
