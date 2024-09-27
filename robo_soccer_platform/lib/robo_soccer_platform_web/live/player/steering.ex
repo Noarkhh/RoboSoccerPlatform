@@ -10,6 +10,7 @@ defmodule RoboSoccerPlatformWeb.Player.Steering do
 
   @game_state "game_state"
   @controller "controller"
+  @disconnect "disconnect"
 
   @spec unregister(String.t()) :: :ok
   def unregister(player_id) do
@@ -26,6 +27,7 @@ defmodule RoboSoccerPlatformWeb.Player.Steering do
   @impl true
   def mount(_params, _session, socket) do
     Endpoint.subscribe(@game_state)
+    Endpoint.subscribe(@disconnect)
 
     {:ok, socket}
   end
@@ -38,6 +40,7 @@ defmodule RoboSoccerPlatformWeb.Player.Steering do
 
     socket
     |> assign(player: player)
+    |> assign(room_code: params["room_code"])
     |> restore()
     |> then(&{:noreply, &1})
   end
@@ -66,7 +69,8 @@ defmodule RoboSoccerPlatformWeb.Player.Steering do
     Endpoint.broadcast_from(self(), @controller, "joystick_position", %{
       x: x / 100,
       y: y / 100,
-      id: socket.assigns.player.id
+      id: socket.assigns.player.id,
+      room_code: socket.assigns.room_code
     })
 
     {:noreply, socket}
@@ -114,6 +118,14 @@ defmodule RoboSoccerPlatformWeb.Player.Steering do
     |> store(%{game_state: "stopped"})
     |> push_event("game_stopped", %{})
     |> then(&{:noreply, &1})
+  end
+
+  def handle_info(%{topic: @disconnect, event: "disconnect", payload: %{id: id}}, socket) when id != socket.assigns.id do
+    {:noreply, socket}
+  end
+
+  def handle_info(%{topic: @disconnect, event: "disconnect", payload: %{id: id}}, socket) do
+    {:noreply, push_navigate(socket, to: "/player")}
   end
 
   defp store(socket, data) do

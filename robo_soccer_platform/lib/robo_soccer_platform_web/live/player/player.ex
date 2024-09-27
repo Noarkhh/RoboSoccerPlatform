@@ -107,6 +107,7 @@ defmodule RoboSoccerPlatformWeb.Player do
         URI.encode_query(
           team: team,
           username: socket.assigns.form["username"],
+          room_code: socket.assigns.form["room_code"],
           id: socket.assigns.id
         )
 

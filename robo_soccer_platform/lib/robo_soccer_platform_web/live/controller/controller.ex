@@ -11,6 +11,7 @@ defmodule RoboSoccerPlatformWeb.Controller do
   @controller "controller"
   @is_game_started "is_game_started"
   @controller_robots_only "controller_robots_only"
+  @disconnect "disconnect"
 
   def mount(_params, _session, socket) do
     Endpoint.subscribe(@controller)
@@ -18,7 +19,7 @@ defmodule RoboSoccerPlatformWeb.Controller do
     Endpoint.subscribe(@is_game_started)
 
     socket
-    |> assign(room_code: "1234")
+    |> assign(room_code: get_random_room_code())
     |> assign(game_state: :before_start)
     |> assign(players: %{})
     |> assign(
@@ -28,7 +29,6 @@ defmodule RoboSoccerPlatformWeb.Controller do
       }
     )
     |> assign(seconds_left: 10 * 60)
-    |> assign(time_is_over: false)
     |> then(&{:ok, &1})
   end
 
@@ -42,7 +42,6 @@ defmodule RoboSoccerPlatformWeb.Controller do
         teams={@teams}
         game_state={@game_state}
         seconds_left={@seconds_left}
-        time_is_over={@time_is_over}
         room_code={@room_code}
       />
     </div>
@@ -110,9 +109,11 @@ defmodule RoboSoccerPlatformWeb.Controller do
       |> assign(seconds_left: seconds_left)
       |> then(&{:noreply, &1})
     else
+      Endpoint.broadcast_from(self(), @game_state, "stop_game", nil)
+
       socket
-      |> assign(seconds_left: seconds_left)
-      |> assign(time_is_over: true)
+      |> assign(game_state: :stopped)
+      |> assign(seconds_left: 10 * 60)
       |> then(&{:noreply, &1})
     end
   end
@@ -154,6 +155,19 @@ defmodule RoboSoccerPlatformWeb.Controller do
     |> assign(players: players)
     |> Assigns.assign_teams()
     |> then(&{:noreply, &1})
+  end
+
+  def handle_info(
+        %{
+          topic: @controller,
+          event: "joystick_position",
+          payload: %{id: id, room_code: room_code}
+        },
+        socket
+      ) when room_code != socket.assigns.room_code do
+    Endpoint.broadcast_from(self(), @disconnect, "disconnect", %{id: id})
+
+    {:noreply, socket}
   end
 
   def handle_info(
@@ -229,5 +243,10 @@ defmodule RoboSoccerPlatformWeb.Controller do
   def handle_info(message, socket) do
     Logger.warning("Ignoring message: #{inspect(message)}")
     {:noreply, socket}
+  end
+
+  defp get_random_room_code() do
+    Enum.random(10000..99999)
+    |> to_string()
   end
 end
