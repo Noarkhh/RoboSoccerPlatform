@@ -9,7 +9,7 @@ defmodule RoboSoccerPlatformWeb.Controller.Components do
   def before_game_view(assigns) do
     ~H"""
     <div class="text-center text-3xl">
-      ROOM CODE: <%= @room_code %>
+      Kod Pokoju: <%= @room_code %>
     </div>
 
     <.teams red_players={@teams.red.players} green_players={@teams.green.players} />
@@ -53,7 +53,7 @@ defmodule RoboSoccerPlatformWeb.Controller.Components do
         </div>
 
         <div class="col-span-2 text-center text-3xl">
-          ROOM CODE: <%= @room_code %>
+          Kod Pokoju: <%= @room_code %>
         </div>
 
         <div class="flex flex-col flex-1 items-center gap-8">
@@ -118,7 +118,7 @@ defmodule RoboSoccerPlatformWeb.Controller.Components do
     ~H"""
     <div class="flex flex-col flex-1 min-w-0">
       <div class={"text-center #{@class} bg-light-orange p-2"}>
-        druzyna <%= if @color == :red, do: "czerwona", else: "zielona" %>
+        Drużyna <%= if @color == :red, do: "czerwona", else: "zielona" %>
       </div>
       <div class={"flex flex-1 flex-col px-8 py-8 gap-2 #{@container_class}"}>
         <div :for={player <- @players} class="flex bg-sky-blue gap-4">

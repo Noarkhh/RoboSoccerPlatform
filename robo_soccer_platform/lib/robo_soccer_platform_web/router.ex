@@ -10,8 +10,19 @@ defmodule RoboSoccerPlatformWeb.Router do
     plug(:put_secure_browser_headers)
   end
 
+  pipeline :controller do
+    plug(:browser)
+    plug(:auth)
+  end
+
   pipeline :api do
     plug(:accepts, ["json"])
+  end
+
+  scope "/controller", RoboSoccerPlatformWeb do
+    pipe_through(:controller)
+
+    live "/", Controller
   end
 
   scope "/", RoboSoccerPlatformWeb do
@@ -20,7 +31,6 @@ defmodule RoboSoccerPlatformWeb.Router do
     get "/", PageController, :home
     live "/player", Player
     live "/player/steering", Player.Steering
-    live "/controller", Controller
   end
 
   # Other scopes may use custom stacks.
@@ -42,5 +52,11 @@ defmodule RoboSoccerPlatformWeb.Router do
 
       live_dashboard("/dashboard", metrics: RoboSoccerPlatformWeb.Telemetry)
     end
+  end
+
+  defp auth(conn, _opts) do
+    username = System.fetch_env!("CONTROLLER_USERNAME")
+    password = System.fetch_env!("CONTROLLER_PASSWORD")
+    Plug.BasicAuth.basic_auth(conn, username: username, password: password)
   end
 end

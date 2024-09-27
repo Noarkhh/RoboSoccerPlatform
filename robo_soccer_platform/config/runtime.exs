@@ -23,11 +23,11 @@ config :robo_soccer_platform, RoboSoccerPlatform.PlayerInputAggregator,
   robot_configs: %{
     "red" => %{
       robot_ip_address: System.fetch_env!("RED_ROBOT_IP"),
-      local_port: System.fetch_env!("RED_ROBOT_LOCAL_PORT")
+      local_port: System.fetch_env!("RED_ROBOT_SERVER_PORT")
     },
     "green" => %{
       robot_ip_address: System.fetch_env!("GREEN_ROBOT_IP"),
-      local_port: System.fetch_env!("GREEN_ROBOT_LOCAL_PORT")
+      local_port: System.fetch_env!("GREEN_ROBOT_SERVER_PORT")
     }
   }
 
