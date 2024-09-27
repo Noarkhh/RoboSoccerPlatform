@@ -1,13 +1,13 @@
 defmodule RoboSoccerPlatformWeb.Player do
   use RoboSoccerPlatformWeb, :live_view
 
-  @is_game_started "is_game_started"
+  @join_game "join_game"
 
   alias RoboSoccerPlatformWeb.Player.Utils
   alias RoboSoccerPlatformWeb.Endpoint
 
   def mount(_params, _session, socket) do
-    Endpoint.subscribe(@is_game_started)
+    Endpoint.subscribe(@join_game)
 
     socket
     |> assign(id: UUID.uuid4())
@@ -70,7 +70,7 @@ defmodule RoboSoccerPlatformWeb.Player do
     if form["errors"] == [] do
       Endpoint.broadcast_from(
         self(),
-        @is_game_started,
+        @join_game,
         "request",
         %{id: socket.assigns.id, team: team, code: socket.assigns.form["room_code"]}
       )
@@ -80,17 +80,10 @@ defmodule RoboSoccerPlatformWeb.Player do
   end
 
   # ignore other players requests
-  def handle_info(%{topic: @is_game_started, event: "request"}, socket), do: {:noreply, socket}
+  def handle_info(%{topic: @join_game, event: "request"}, socket), do: {:noreply, socket}
 
   def handle_info(
-    %{topic: @is_game_started, event: "response", payload: %{state: :started, id: id}}, socket
-  ) when id == socket.assigns.id do
-
-    {:noreply, put_flash(socket, :error, "GRA JUŻ SIĘ ZACZĘŁA, POPROŚ PROWADZĄCYCH O ZATRZYMANIE GRY")}
-  end
-
-  def handle_info(
-    %{topic: @is_game_started, event: "response", payload: %{code: :error, id: id}},
+    %{topic: @join_game, event: "response", payload: %{code: :error, id: id}},
     socket
   ) when id == socket.assigns.id do
 
@@ -98,7 +91,7 @@ defmodule RoboSoccerPlatformWeb.Player do
   end
 
   def handle_info(
-    %{topic: @is_game_started, event: "response", payload: %{id: id, team: team}},
+    %{topic: @join_game, event: "response", payload: %{id: id, team: team}},
     socket
   ) when id == socket.assigns.id do
 
@@ -115,7 +108,7 @@ defmodule RoboSoccerPlatformWeb.Player do
   end
 
   # ignore responses to other player
-  def handle_info(%{topic: @is_game_started, event: "response"}, socket), do: {:noreply, socket}
+  def handle_info(%{topic: @join_game, event: "response"}, socket), do: {:noreply, socket}
 
   attr :team, :any, required: true
   attr :class, :any, default: ""

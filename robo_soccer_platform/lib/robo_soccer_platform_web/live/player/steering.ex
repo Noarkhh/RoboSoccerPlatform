@@ -25,27 +25,24 @@ defmodule RoboSoccerPlatformWeb.Player.Steering do
   end
 
   @impl true
-  def mount(_params, _session, socket) do
+  def mount(params, _session, socket) do
     Endpoint.subscribe(@game_state)
     Endpoint.subscribe(@disconnect)
 
+    player = %Player{id: params["id"], team: params["team"], username: params["username"]}
+
+    RoboSoccerPlatformWeb.Player.PlayersMonitor.monitor(self(), params["id"])
+
     socket
-    |> assign(monitored: false)
+    |> assign(player: player)
+    |> assign(room_code: params["room_code"])
+    |> restore()
     |> then(&{:ok, &1})
   end
 
   @impl true
-  def handle_params(params, _uri, socket) do
-    player = %Player{id: params["id"], team: params["team"], username: params["username"]}
-
-    if not socket.assigns.monitored, do: RoboSoccerPlatformWeb.Player.PlayersMonitor.monitor(self(), params["id"])
-
-    socket
-    |> assign(monitored: true)
-    |> assign(player: player)
-    |> assign(room_code: params["room_code"])
-    |> restore()
-    |> then(&{:noreply, &1})
+  def handle_params(_params, _uri, socket) do
+    {:noreply, socket}
   end
 
   @impl true
@@ -80,6 +77,8 @@ defmodule RoboSoccerPlatformWeb.Player.Steering do
   end
 
   def handle_event("restoreState", token_data, socket) when is_binary(token_data) do
+    Endpoint.broadcast_from(self(), @controller, "register_player", socket.assigns.player)
+
     case Utils.restore_from_token(token_data) do
       {:ok, nil} ->
         socket
