@@ -24,7 +24,11 @@ defmodule RoboSoccerPlatformWeb.Player.PlayersMonitor do
 
   def handle_info({:DOWN, _ref, :process, pid, _reason}, state) do
     {player_id, new_players} = Map.pop(state.players, pid)
-    Steering.unregister(player_id)
+
+    unless new_players |> Map.values() |> Enum.member?(player_id) do
+      Steering.unregister(player_id)
+    end
+
     {:noreply, %{state | players: new_players}}
   end
 end

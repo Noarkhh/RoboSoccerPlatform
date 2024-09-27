@@ -31,8 +31,6 @@ defmodule RoboSoccerPlatformWeb.Player.Steering do
 
     player = %Player{id: params["id"], team: params["team"], username: params["username"]}
 
-    RoboSoccerPlatformWeb.Player.PlayersMonitor.monitor(self(), params["id"])
-
     socket
     |> assign(player: player)
     |> assign(room_code: params["room_code"])
@@ -78,6 +76,7 @@ defmodule RoboSoccerPlatformWeb.Player.Steering do
 
   def handle_event("restoreState", token_data, socket) when is_binary(token_data) do
     Endpoint.broadcast_from(self(), @controller, "register_player", socket.assigns.player)
+    RoboSoccerPlatformWeb.Player.PlayersMonitor.monitor(self(), socket.assigns.player.id)
 
     case Utils.restore_from_token(token_data) do
       {:ok, nil} ->
@@ -104,6 +103,7 @@ defmodule RoboSoccerPlatformWeb.Player.Steering do
 
   def handle_event("restoreState", _token_data, socket) do
     Endpoint.broadcast_from(self(), @controller, "register_player", socket.assigns.player)
+    RoboSoccerPlatformWeb.Player.PlayersMonitor.monitor(self(), socket.assigns.player.id)
     {:noreply, socket}
   end
 
@@ -122,7 +122,8 @@ defmodule RoboSoccerPlatformWeb.Player.Steering do
     |> then(&{:noreply, &1})
   end
 
-  def handle_info(%{topic: @disconnect, event: "disconnect", payload: %{id: id}}, socket) when id != socket.assigns.id do
+  def handle_info(%{topic: @disconnect, event: "disconnect", payload: %{id: id}}, socket)
+      when id != socket.assigns.id do
     {:noreply, socket}
   end
 
