@@ -238,7 +238,7 @@ defmodule RoboSoccerPlatformWeb.Controller do
   end
 
   def handle_info(message, socket) do
-    Logger.warning("CONTROLLER: Ignoring message: #{inspect(message)}")
+    Logger.warning("[Controller] Ignoring message: #{inspect(message)}")
     {:noreply, socket}
   end
 

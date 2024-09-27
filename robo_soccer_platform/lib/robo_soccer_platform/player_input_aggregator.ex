@@ -153,7 +153,7 @@ defmodule RoboSoccerPlatform.PlayerInputAggregator do
   @impl true
   def handle_info(msg, state) do
     Logger.warning("""
-    PLAYER INPUT AGGREGATOR:  Ignoring message: #{inspect(msg)}
+    [PlayerInputAggregator] Ignoring message: #{inspect(msg)}
     State: #{inspect(state)}
     """)
 
