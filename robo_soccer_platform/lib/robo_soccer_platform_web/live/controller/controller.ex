@@ -1,4 +1,5 @@
 defmodule RoboSoccerPlatformWeb.Controller do
+  require Logger
   use RoboSoccerPlatformWeb, :live_view
 
   import RoboSoccerPlatformWeb.Controller.Components, only: [before_game_view: 1, in_game_view: 1]
@@ -21,10 +22,12 @@ defmodule RoboSoccerPlatformWeb.Controller do
     |> assign(room_code: get_random_room_code())
     |> assign(game_state: :before_start)
     |> assign(players: %{})
-    |> assign(teams: %{
-      green: %{players: [], goals: 0, instruction: %{x: 0, y: 0}},
-      red: %{players: [], goals: 0, instruction: %{x: 0, y: 0}}
-    })
+    |> assign(
+      teams: %{
+        green: %{players: [], goals: 0, instruction: %{x: 0, y: 0}},
+        red: %{players: [], goals: 0, instruction: %{x: 0, y: 0}}
+      }
+    )
     |> assign(seconds_left: 10 * 60)
     |> then(&{:ok, &1})
   end
@@ -32,11 +35,7 @@ defmodule RoboSoccerPlatformWeb.Controller do
   def render(assigns) do
     ~H"""
     <div class="flex flex-col h-[80vh] gap-8">
-      <.before_game_view
-        :if={@game_state == :before_start}
-        teams={@teams}
-        room_code={@room_code}
-      />
+      <.before_game_view :if={@game_state == :before_start} teams={@teams} room_code={@room_code} />
 
       <.in_game_view
         :if={@game_state != :before_start}
@@ -97,7 +96,8 @@ defmodule RoboSoccerPlatformWeb.Controller do
     |> then(&{:noreply, &1})
   end
 
-  def handle_info(:tick, socket) when socket.assigns.game_state != :started, do: {:noreply, socket}
+  def handle_info(:tick, socket) when socket.assigns.game_state != :started,
+    do: {:noreply, socket}
 
   def handle_info(:tick, socket) do
     seconds_left = socket.assigns.seconds_left - 1
@@ -119,7 +119,8 @@ defmodule RoboSoccerPlatformWeb.Controller do
   end
 
   # disable registering when game is started
-  def handle_info(%{topic: @controller, event: "register_player"}, socket) when socket.assigns.game_state == :started do
+  def handle_info(%{topic: @controller, event: "register_player"}, socket)
+      when socket.assigns.game_state == :started do
     {:noreply, socket}
   end
 
@@ -131,7 +132,24 @@ defmodule RoboSoccerPlatformWeb.Controller do
         },
         socket
       ) do
-    players = Map.put(socket.assigns.players, id, %{team: team, username: username, x: 0, y: 0})
+    players =
+      Map.put(socket.assigns.players, id, %{team: team, username: username, x: 0.0, y: 0.0})
+
+    socket
+    |> assign(players: players)
+    |> Assigns.assign_teams()
+    |> then(&{:noreply, &1})
+  end
+
+  def handle_info(
+        %{
+          topic: @controller,
+          event: "unregister_player",
+          payload: player_id
+        },
+        socket
+      ) do
+    {_player, players} = Map.pop(socket.assigns.players, player_id)
 
     socket
     |> assign(players: players)
@@ -178,7 +196,11 @@ defmodule RoboSoccerPlatformWeb.Controller do
   end
 
   # handle wrong room code passed
-  def handle_info(%{topic: @is_game_started, event: "request", payload: %{id: id, code: code}}, socket) when code != socket.assigns.room_code do
+  def handle_info(
+        %{topic: @is_game_started, event: "request", payload: %{id: id, code: code}},
+        socket
+      )
+      when code != socket.assigns.room_code do
     Endpoint.broadcast_from(
       self(),
       @is_game_started,
@@ -189,7 +211,10 @@ defmodule RoboSoccerPlatformWeb.Controller do
     {:noreply, socket}
   end
 
-  def handle_info(%{topic: @is_game_started, event: "request", payload: %{id: id, team: team}}, socket) do
+  def handle_info(
+        %{topic: @is_game_started, event: "request", payload: %{id: id, team: team}},
+        socket
+      ) do
     Endpoint.broadcast_from(
       self(),
       @is_game_started,
@@ -200,12 +225,24 @@ defmodule RoboSoccerPlatformWeb.Controller do
     {:noreply, socket}
   end
 
-  def handle_info(%{topic: @controller_robots_only, event: "new_instructions", payload: %{x: x, y: y, team: team}}, socket) do
+  def handle_info(
+        %{
+          topic: @controller_robots_only,
+          event: "new_instructions",
+          payload: %{x: x, y: y, team: team}
+        },
+        socket
+      ) do
     team_atom = String.to_existing_atom(team)
 
     teams = put_in(socket.assigns.teams, [team_atom, :instruction], %{x: x, y: y})
 
     {:noreply, assign(socket, teams: teams)}
+  end
+
+  def handle_info(message, socket) do
+    Logger.warning("Ignoring message: #{inspect(message)}")
+    {:noreply, socket}
   end
 
   defp get_random_room_code() do
