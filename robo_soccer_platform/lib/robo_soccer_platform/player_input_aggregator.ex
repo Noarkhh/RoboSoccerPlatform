@@ -77,7 +77,7 @@ defmodule RoboSoccerPlatform.PlayerInputAggregator do
       RobotConnection.send_instruction(state.robot_connections[team], %{x: 0.0, y: 0.0})
     end)
 
-    Process.cancel_timer(state.aggregation_timer)
+    if state.aggregation_timer, do: Process.cancel_timer(state.aggregation_timer)
 
     {:noreply, %{state | game_started: false, aggregation_timer: nil}}
   end
@@ -156,7 +156,7 @@ defmodule RoboSoccerPlatform.PlayerInputAggregator do
   @impl true
   def handle_info(msg, state) do
     Logger.warning("""
-    Ignoring message: #{inspect(msg)}
+    PLAYER INPUT AGGREGATOR:  Ignoring message: #{inspect(msg)}
     State: #{inspect(state)}
     """)
 
