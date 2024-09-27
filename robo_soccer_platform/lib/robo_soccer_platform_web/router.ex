@@ -31,7 +31,6 @@ defmodule RoboSoccerPlatformWeb.Router do
     get "/", PageController, :home
     live "/player", Player
     live "/player/steering", Player.Steering
-    # live "/controller", Controller
   end
 
   # Other scopes may use custom stacks.
