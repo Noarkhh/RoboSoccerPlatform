@@ -160,7 +160,8 @@ defmodule RoboSoccerPlatformWeb.Controller do
           payload: %{id: id, room_code: room_code}
         },
         socket
-      ) when room_code != socket.assigns.room_code do
+      )
+      when room_code != socket.assigns.room_code do
     Endpoint.broadcast_from(self(), @disconnect, "disconnect", %{id: id})
 
     {:noreply, socket}

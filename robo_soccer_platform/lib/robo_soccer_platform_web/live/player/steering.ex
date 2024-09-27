@@ -30,11 +30,17 @@ defmodule RoboSoccerPlatformWeb.Player.Steering do
     Endpoint.subscribe(@disconnect)
 
     player = %Player{id: params["id"], team: params["team"], username: params["username"]}
+    Endpoint.broadcast_from(self(), @controller, "register_player", player)
+    RoboSoccerPlatformWeb.Player.PlayersMonitor.monitor(self(), player.id)
 
-    socket
+    if RoboSoccerPlatform.PlayerInputAggregator.is_game_started() do
+      push_event(socket, "game_started", %{})
+    else
+      push_event(socket, "game_stopped", %{})
+    end
     |> assign(player: player)
     |> assign(room_code: params["room_code"])
-    |> restore()
+    # |> restore()
     |> then(&{:ok, &1})
   end
 
@@ -104,6 +110,7 @@ defmodule RoboSoccerPlatformWeb.Player.Steering do
   def handle_event("restoreState", _token_data, socket) do
     Endpoint.broadcast_from(self(), @controller, "register_player", socket.assigns.player)
     RoboSoccerPlatformWeb.Player.PlayersMonitor.monitor(self(), socket.assigns.player.id)
+
     {:noreply, socket}
   end
 
