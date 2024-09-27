@@ -85,7 +85,7 @@ defmodule RoboSoccerPlatform.PlayerInputAggregator do
   @impl true
   def handle_info(
         %{topic: @controller, event: "register_player", payload: player},
-        %State{game_started: false} = state
+        state
       ) do
     player_inputs = Map.put(state.player_inputs, player.id, %{player: player, x: 0.0, y: 0.0})
 
@@ -119,7 +119,7 @@ defmodule RoboSoccerPlatform.PlayerInputAggregator do
   @impl true
   def handle_info(
         %{topic: @controller, event: "joystick_position", payload: %{x: x, y: y, id: id}},
-        %State{game_started: true, player_inputs: player_inputs} = state
+        %State{player_inputs: player_inputs} = state
       )
       when is_map_key(player_inputs, id) do
     player_input = %{state.player_inputs[id] | x: x, y: y}
