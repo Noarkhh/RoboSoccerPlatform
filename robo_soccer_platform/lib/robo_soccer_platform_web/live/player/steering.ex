@@ -25,21 +25,31 @@ defmodule RoboSoccerPlatformWeb.Player.Steering do
   end
 
   @impl true
-  def mount(params, _session, socket) do
+  def mount(_params, _session, socket) do
     Endpoint.subscribe(@game_state)
     Endpoint.subscribe(@disconnect)
+    IO.inspect("dupa")
 
+    socket
+    |> assign(monitored: false)
+    |> then(&{:ok, &1})
+  end
+
+  @impl true
+  def handle_params(params, _uri, socket) do
     player = %Player{id: params["id"], team: params["team"], username: params["username"]}
 
-    RoboSoccerPlatformWeb.Player.PlayersMonitor.monitor(self(), params["id"])
+    if not socket.assigns.monitored,
+      do: RoboSoccerPlatformWeb.Player.PlayersMonitor.monitor(self(), params["id"])
 
     Endpoint.broadcast_from(self(), @controller, "register_player", player)
 
     socket
+    |> assign(monitored: true)
     |> assign(player: player)
     |> assign(room_code: params["room_code"])
     |> restore()
-    |> then(&{:ok, &1})
+    |> then(&{:noreply, &1})
   end
 
   @impl true
