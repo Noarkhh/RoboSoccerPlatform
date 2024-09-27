@@ -18,6 +18,8 @@ defmodule RoboSoccerPlatformWeb.Controller do
     Endpoint.subscribe(@controller_robots_only)
     Endpoint.subscribe(@is_game_started)
 
+    Endpoint.broadcast_from(self(), @game_state, "stop_game", nil)
+
     socket
     |> assign(room_code: get_random_room_code())
     |> assign(game_state: :before_start)
@@ -241,7 +243,7 @@ defmodule RoboSoccerPlatformWeb.Controller do
   end
 
   def handle_info(message, socket) do
-    Logger.warning("Ignoring message: #{inspect(message)}")
+    Logger.warning("CONTROLLER: Ignoring message: #{inspect(message)}")
     {:noreply, socket}
   end
 
