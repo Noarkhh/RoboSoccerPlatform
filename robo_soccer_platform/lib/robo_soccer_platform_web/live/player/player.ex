@@ -29,7 +29,7 @@ defmodule RoboSoccerPlatformWeb.Player do
             phx-debounce="blur"
             name="username"
             value=""
-            label="NAZWA GRACZA"
+            label="Nazwa Gracza"
             errors={@form["errors"]}
             label_class="text-center"
           />
@@ -37,7 +37,7 @@ defmodule RoboSoccerPlatformWeb.Player do
             phx-debounce="500"
             name="room_code"
             value=""
-            label="NUMER POKOJU"
+            label="Kod Pokoju"
             errors={@form["errors"]}
             label_class="text-center"
           />
@@ -83,18 +83,18 @@ defmodule RoboSoccerPlatformWeb.Player do
   def handle_info(%{topic: @join_game, event: "request"}, socket), do: {:noreply, socket}
 
   def handle_info(
-    %{topic: @join_game, event: "response", payload: %{code: :error, id: id}},
-    socket
-  ) when id == socket.assigns.id do
-
+        %{topic: @join_game, event: "response", payload: %{code: :error, id: id}},
+        socket
+      )
+      when id == socket.assigns.id do
     {:noreply, put_flash(socket, :error, "ZŁY NUMER POKOJU, SPRÓBUJ PONOWNIE")}
   end
 
   def handle_info(
-    %{topic: @join_game, event: "response", payload: %{id: id, team: team}},
-    socket
-  ) when id == socket.assigns.id do
-
+        %{topic: @join_game, event: "response", payload: %{id: id, team: team}},
+        socket
+      )
+      when id == socket.assigns.id do
     path =
       "/player/steering?" <>
         URI.encode_query(

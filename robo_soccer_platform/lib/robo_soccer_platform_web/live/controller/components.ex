@@ -8,14 +8,21 @@ defmodule RoboSoccerPlatformWeb.Controller.Components do
 
   def before_game_view(assigns) do
     ~H"""
-    <div class="flex justify-center gap-40">
-      <img src="images/qr_wifi.png" class="w-[200px]">
-
-      <div class="text-center text-3xl flex flex-col justify-center">
-        Kod Pokoju: <%= @room_code %>
+    <div class="flex justify-evenly items-center col-span-2 ">
+      <div class="flex flex-col items-center gap-4">
+        <div class="text-7xl">WiFi</div>
+        <img src="images/qr_wifi.png" class="w-[260px]" />
+        <div class="text-xl">nazwa: robo | hasło: roborobo</div>
       </div>
-
-      <img src="images/qr_player_link.png" class="w-[200px]">
+      <div class="flex flex-col text-center gap-8">
+        <div class="text-5xl">Kod Pokoju</div>
+        <div class="text-9xl"><%= @room_code %></div>
+      </div>
+      <div class="flex flex-col items-center gap-4">
+        <div class="text-7xl">Strona</div>
+        <img src="images/qr_player_link.png" class="w-[260px]" />
+        <div class="text-xl">http://192.168.0.2:4000</div>
+      </div>
     </div>
 
     <.teams red_players={@teams.red.players} green_players={@teams.green.players} />
@@ -58,10 +65,26 @@ defmodule RoboSoccerPlatformWeb.Controller.Components do
           <.teams red_players={@teams.red.players} green_players={@teams.green.players} />
         </div>
 
-        <div class="col-span-2 text-center text-3xl">
-          Kod Pokoju: <%= @room_code %>
+        <div class="flex flex-col items-center gap-16 col-span-2">
+          <div class="flex flex-col items-center text-7xl gap-8">
+            <div class="flex flex-col text-center gap-8">
+              <div class="text-5xl">Kod Pokoju</div>
+              <div class="text-9xl"><%= @room_code %></div>
+            </div>
+            <div class="flex text-center gap-16">
+              <div class="flex flex-col items-center gap-4">
+                <div class="text-7xl">WiFi</div>
+                <img src="images/qr_wifi.png" class="w-[260px]" />
+                <div class="text-xl">nazwa: robo | hasło: roborobo</div>
+              </div>
+              <div class="flex flex-col items-center gap-4">
+                <div class="text-7xl">Strona</div>
+                <img src="images/qr_player_link.png" class="w-[260px]" />
+                <div class="text-xl">http://192.168.0.2:4000</div>
+              </div>
+            </div>
+          </div>
         </div>
-
         <div class="flex flex-col flex-1 items-center gap-8">
           <.time_left seconds={@seconds_left} />
           <.score red_goals={@teams.red.goals} green_goals={@teams.green.goals} />
