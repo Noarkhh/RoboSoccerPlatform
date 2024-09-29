@@ -5,15 +5,9 @@ defmodule RoboSoccerPlatformWeb.GameController do
   import RoboSoccerPlatformWeb.GameController.Components,
     only: [before_game_view: 1, in_game_view: 1]
 
-  alias RoboSoccerPlatformWeb.GameController.Assigns
   alias RoboSoccerPlatformWeb.Endpoint
 
   @game_state "game_state"
-  @controller "controller"
-  @join_game "join_game"
-  @controller_robots_only "controller_robots_only"
-  @disconnect "disconnect"
-
   @type steering_state :: %{
           player_inputs: %{
             (player_id :: String.t()) => RoboSoccerPlatform.GameController.player_input()
@@ -93,8 +87,6 @@ defmodule RoboSoccerPlatformWeb.GameController do
 
   @impl true
   def handle_event("goal", %{"team" => team}, socket) do
-    # team_color_as_atom = String.to_existing_atom(team_color)
-    #
     teams = update_in(socket.assigns.teams, [team, :goals], &(&1 + 1))
 
     socket
@@ -137,133 +129,9 @@ defmodule RoboSoccerPlatformWeb.GameController do
     end
   end
 
-  # @impl true
-  # def handle_info(
-  # %{
-  # topic: @controller,
-  # event: "register_player",
-  # payload: %{id: id, team: team, username: username}
-  # },
-  # socket
-  # ) do
-  # players =
-  # Map.put(socket.assigns.players, id, %{team: team, username: username, x: 0.0, y: 0.0})
-
-  # socket
-  # |> assign(players: players)
-  # |> Assigns.assign_teams()
-  # |> then(&{:noreply, &1})
-  # end
-
-  # @impl true
-  # def handle_info(
-  # %{
-  # topic: @controller,
-  # event: "unregister_player",
-  # payload: player_id
-  # },
-  # socket
-  # ) do
-  # {_player, players} = Map.pop(socket.assigns.players, player_id)
-
-  # socket
-  # |> assign(players: players)
-  # |> Assigns.assign_teams()
-  # |> then(&{:noreply, &1})
-  # end
-
-  # @impl true
-  # def handle_info(
-  # %{
-  # topic: @controller,
-  # event: "joystick_position",
-  # payload: %{id: id, room_code: room_code}
-  # },
-  # socket
-  # )
-  # when room_code != socket.assigns.room_code do
-  # Endpoint.broadcast_from(self(), @disconnect, "disconnect", %{id: id})
-
-  # {:noreply, socket}
-  # end
-
-  # @impl true
-  # def handle_info(
-  # %{
-  # topic: @controller,
-  # event: "joystick_position",
-  # payload: %{x: x, y: y, id: id}
-  # },
-  # socket
-  # ) do
-  # if Map.has_key?(socket.assigns.players, id) do
-  # updated_player =
-  # socket.assigns.players
-  # |> Map.get(id)
-  # |> Map.merge(%{x: x, y: y})
-
-  # players = Map.put(socket.assigns.players, id, updated_player)
-
-  # socket
-  # |> assign(players: players)
-  # |> Assigns.assign_teams()
-  # |> then(&{:noreply, &1})
-  # else
-  # {:noreply, socket}
-  # end
-  # end
-
-  ## handle wrong room code passed
-  # @impl true
-  # def handle_info(
-  # %{topic: @join_game, event: "request", payload: %{id: id, code: code}},
-  # socket
-  # )
-  # when code != socket.assigns.room_code do
-  # Endpoint.broadcast_from(
-  # self(),
-  # @join_game,
-  # "response",
-  # %{id: id, code: :error}
-  # )
-
-  # {:noreply, socket}
-  # end
-
-  # @impl true
-  # def handle_info(
-  # %{topic: @join_game, event: "request", payload: %{id: id, team: team}},
-  # socket
-  # ) do
-  # Endpoint.broadcast_from(
-  # self(),
-  # @join_game,
-  # "response",
-  # %{id: id, team: team}
-  # )
-
-  # {:noreply, socket}
-  # end
-
-  # @impl true
-  # def handle_info(
-  # %{
-  # topic: @controller_robots_only,
-  # event: "new_instructions",
-  # payload: %{x: x, y: y, team: team}
-  # },
-  # socket
-  # ) do
-  # team_atom = String.to_existing_atom(team)
-
-  # teams = put_in(socket.assigns.teams, [team_atom, :instruction], %{x: x, y: y})
-
-  # {:noreply, assign(socket, teams: teams)}
-  # end
-
   @impl true
   def handle_info(message, socket) do
-    Logger.warning("CONTROLLER: Ignoring message: #{inspect(message)}")
+    Logger.warning("[#{inspect(__MODULE__)}] Ignoring message: #{inspect(message)}")
     {:noreply, socket}
   end
 
@@ -290,10 +158,5 @@ defmodule RoboSoccerPlatformWeb.GameController do
         }
       }
     end)
-  end
-
-  defp get_random_room_code() do
-    Enum.random(10000..99999)
-    |> to_string()
   end
 end
