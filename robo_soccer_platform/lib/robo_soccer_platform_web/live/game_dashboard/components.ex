@@ -1,7 +1,7 @@
-defmodule RoboSoccerPlatformWeb.GameController.Components do
+defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
   use RoboSoccerPlatformWeb, :component
 
-  alias RoboSoccerPlatformWeb.GameController.Utils
+  alias RoboSoccerPlatformWeb.GameDashboard.Utils
 
   attr :teams, :map, required: true
   attr :room_code, :string, required: true
