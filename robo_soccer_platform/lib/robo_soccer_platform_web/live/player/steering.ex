@@ -14,7 +14,7 @@ defmodule RoboSoccerPlatformWeb.Player.Steering do
     player = %Player{id: params["id"], team: params["team"], username: params["username"]}
 
     if connected?(socket) do
-      RoboSoccerPlatform.GameController.register_player(self(), player)
+      RoboSoccerPlatform.GameController.register_player(player, self())
     end
 
     if RoboSoccerPlatform.GameController.room_code_correct?(params["room_code"]) do
