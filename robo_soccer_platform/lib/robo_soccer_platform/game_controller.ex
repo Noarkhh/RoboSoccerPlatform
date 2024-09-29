@@ -3,6 +3,7 @@ defmodule RoboSoccerPlatform.GameController do
 
   require Logger
   alias RoboSoccerPlatform.{Player, RobotConnection}
+  alias RoboSoccerPlatformWeb.GameDashboard
 
   @game_state "game_state"
 
@@ -17,7 +18,7 @@ defmodule RoboSoccerPlatform.GameController do
           | {:robot_configs, %{RoboSoccerPlatform.team() => robot_config()}}
           | {:speed_coefficient, float()}
   @type options :: [option()]
-  @type game_state :: :lobby | :started | :stopped | :finished
+  @type game_state :: :lobby | :started | :stopped
   @type player_input :: %{player: Player.t(), x: float(), y: float()}
 
   defmodule State do
@@ -65,7 +66,7 @@ defmodule RoboSoccerPlatform.GameController do
   end
 
   @spec init_game_dashboard(pid()) ::
-          {room_code :: String.t(), RoboSoccerPlatformWeb.GameDashboard.steering_state()}
+          {room_code :: String.t(), GameDashboard.steering_state(), game_state()}
   def init_game_dashboard(game_dashboard_pid) do
     GenServer.call(:game_controller, {:init_game_dashboard, game_dashboard_pid})
   end
@@ -110,7 +111,8 @@ defmodule RoboSoccerPlatform.GameController do
       robot_instructions: state.robot_instructions
     }
 
-    {:reply, {state.room_code, steering_state}, %{state | game_dashboard_pid: game_dashboard_pid}}
+    {:reply, {state.room_code, steering_state, state.game_state},
+     %{state | game_dashboard_pid: game_dashboard_pid}}
   end
 
   @impl true
@@ -119,18 +121,15 @@ defmodule RoboSoccerPlatform.GameController do
     Process.monitor(player_pid)
     player_pids = Map.put(state.player_pids, player_pid, player.id)
 
-    RoboSoccerPlatformWeb.GameDashboard.update_steering_state(state.game_dashboard_pid, %{
-      player_inputs: player_inputs,
-      robot_instructions: state.robot_instructions
-    })
-
     Logger.debug("""
     New player registered: #{inspect(player)}
     Players currently registered: #{inspect(Enum.map(player_inputs, fn {_id, input} -> input.player end))}
     Processes currently monitored: #{inspect(player_pids)}
     """)
 
-    {:noreply, %{state | player_inputs: player_inputs, player_pids: player_pids}}
+    state = %{state | player_inputs: player_inputs, player_pids: player_pids}
+    update_dashboard_steering_state(state)
+    {:noreply, state}
   end
 
   @impl true
@@ -177,6 +176,25 @@ defmodule RoboSoccerPlatform.GameController do
   end
 
   @impl true
+  def handle_info(%{topic: @game_state, event: "new_room"}, state) do
+    Logger.debug("Creating a new room, generating new room code")
+
+    if state.aggregation_timer, do: Process.cancel_timer(state.aggregation_timer)
+
+    state = %{
+      state
+      | game_state: :lobby,
+        aggregation_timer: nil,
+        room_code: generate_room_code()
+    }
+
+    GameDashboard.update_room_code(state.game_dashboard_pid, state.room_code)
+    update_dashboard_steering_state(state)
+
+    {:noreply, state}
+  end
+
+  @impl true
   def handle_info({:DOWN, _ref, :process, player_pid, _reason}, state) do
     case Map.pop(state.player_pids, player_pid) do
       {nil, _player_pids} ->
@@ -198,15 +216,11 @@ defmodule RoboSoccerPlatform.GameController do
           Players currently registered: #{inspect(Enum.map(player_inputs, fn {_id, input} -> input.player end))}
           """)
 
-          RoboSoccerPlatformWeb.GameDashboard.update_steering_state(
-            state.game_dashboard_pid,
-            %{
-              player_inputs: player_inputs,
-              robot_instructions: state.robot_instructions
-            }
-          )
+          state = %{state | player_inputs: player_inputs, player_pids: player_pids}
 
-          {:noreply, %{state | player_inputs: player_inputs, player_pids: player_pids}}
+          update_dashboard_steering_state(state)
+
+          {:noreply, state}
         end
     end
   end
@@ -229,17 +243,15 @@ defmodule RoboSoccerPlatform.GameController do
         {team, instruction}
       end)
 
-    RoboSoccerPlatformWeb.GameDashboard.update_steering_state(state.game_dashboard_pid, %{
-      player_inputs: state.player_inputs,
-      robot_instructions: robot_instructions
-    })
+    state = %{
+      state
+      | robot_instructions: robot_instructions,
+        aggregation_timer: start_aggregation_timer(state.aggregation_interval_ms)
+    }
 
-    {:noreply,
-     %{
-       state
-       | robot_instructions: robot_instructions,
-         aggregation_timer: start_aggregation_timer(state.aggregation_interval_ms)
-     }}
+    update_dashboard_steering_state(state)
+
+    {:noreply, state}
   end
 
   @impl true
@@ -288,7 +300,7 @@ defmodule RoboSoccerPlatform.GameController do
       robot_connections: robot_connections,
       aggregation_interval_ms: aggregation_interval_ms,
       speed_coefficient: speed_coefficient,
-      room_code: Enum.random(1000..9999) |> to_string,
+      room_code: generate_room_code(),
       aggregation_function:
         Function.capture(RoboSoccerPlatform.AggregationFunctions, aggregation_function_name, 1)
     }
@@ -308,8 +320,21 @@ defmodule RoboSoccerPlatform.GameController do
     }
   end
 
+  @spec update_dashboard_steering_state(State.t()) :: :ok
+  def update_dashboard_steering_state(state) do
+    GameDashboard.update_steering_state(state.game_dashboard_pid, %{
+      player_inputs: state.player_inputs,
+      robot_instructions: state.robot_instructions
+    })
+  end
+
   @spec start_aggregation_timer(pos_integer()) :: reference()
   defp start_aggregation_timer(aggregation_interval_ms) do
     Process.send_after(self(), :aggregate, aggregation_interval_ms)
+  end
+
+  @spec generate_room_code() :: String.t()
+  def generate_room_code() do
+    Enum.random(1000..9999) |> to_string
   end
 end

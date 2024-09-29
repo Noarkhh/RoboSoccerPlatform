@@ -8,16 +8,20 @@ defmodule RoboSoccerPlatformWeb.Player.Steering do
   @game_state "game_state"
 
   @impl true
-  def mount(params, _session, socket) do
+  def mount(
+        %{"id" => id, "team" => team, "username" => username, "room_code" => room_code},
+        _session,
+        socket
+      ) do
     Endpoint.subscribe(@game_state)
 
-    player = %Player{id: params["id"], team: params["team"], username: params["username"]}
+    player = %Player{id: id, team: team, username: username}
 
     if connected?(socket) do
       RoboSoccerPlatform.GameController.register_player(player, self())
     end
 
-    if RoboSoccerPlatform.GameController.room_code_correct?(params["room_code"]) do
+    if RoboSoccerPlatform.GameController.room_code_correct?(room_code) do
       case RoboSoccerPlatform.GameController.get_game_state() do
         :started -> push_event(socket, "game_started", %{})
         _not_started -> push_event(socket, "game_stopped", %{})
@@ -30,8 +34,8 @@ defmodule RoboSoccerPlatformWeb.Player.Steering do
   end
 
   @impl true
-  def handle_params(_params, _uri, socket) do
-    {:noreply, socket}
+  def mount(_bad_params, _session, socket) do
+    {:ok, push_navigate(socket, to: "/player")}
   end
 
   @impl true
@@ -75,5 +79,10 @@ defmodule RoboSoccerPlatformWeb.Player.Steering do
     socket
     |> push_event("game_stopped", %{})
     |> then(&{:noreply, &1})
+  end
+
+  @impl true
+  def handle_info(%{topic: @game_state, event: "new_room"}, socket) do
+    {:noreply, push_navigate(socket, to: "/player")}
   end
 end
