@@ -1,4 +1,4 @@
-defmodule RoboSoccerPlatformWeb.Controller.Utils do
+defmodule RoboSoccerPlatformWeb.GameController.Utils do
   @type point :: %{x: x :: float(), y: y :: float()}
 
   @spec point_to_direction(point :: point()) :: String.t()

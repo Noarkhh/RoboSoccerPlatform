@@ -10,7 +10,7 @@ defmodule RoboSoccerPlatformWeb.Router do
     plug(:put_secure_browser_headers)
   end
 
-  pipeline :controller do
+  pipeline :game_controller do
     plug(:browser)
     plug(:auth)
   end
@@ -20,9 +20,9 @@ defmodule RoboSoccerPlatformWeb.Router do
   end
 
   scope "/controller", RoboSoccerPlatformWeb do
-    pipe_through(:controller)
+    pipe_through(:game_controller)
 
-    live "/", Controller
+    live "/", GameController
   end
 
   scope "/", RoboSoccerPlatformWeb do
