@@ -1,5 +1,6 @@
 defmodule RoboSoccerPlatformWeb.GameDashboard do
   require Logger
+  alias Phoenix.Endpoint
   use RoboSoccerPlatformWeb, :live_view
 
   import RoboSoccerPlatformWeb.GameDashboard.Components,
@@ -29,12 +30,13 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
 
   @impl true
   def mount(_params, _session, socket) do
-    {room_code, steering_state} = RoboSoccerPlatform.GameController.init_game_dashboard(self())
+    {room_code, steering_state, game_state} =
+      RoboSoccerPlatform.GameController.init_game_dashboard(self())
 
     socket
     |> assign(room_code: room_code)
     |> assign(teams: init_teams(steering_state))
-    |> assign(game_state: :lobby)
+    |> assign(game_state: game_state)
     |> assign(seconds_left: 10 * 60)
     |> then(&{:ok, &1})
   end
@@ -100,6 +102,15 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
 
     socket
     |> assign(teams: teams)
+    |> then(&{:noreply, &1})
+  end
+
+  @impl true
+  def handle_event("next_match", _params, socket) do
+    Endpoint.broadcast_from(self(), @game_state, "next_match", nil)
+
+    socket
+    |> assign(game_state: :lobby)
     |> then(&{:noreply, &1})
   end
 
