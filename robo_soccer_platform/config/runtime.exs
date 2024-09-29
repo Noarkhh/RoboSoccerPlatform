@@ -19,7 +19,7 @@ import Config
 config :robo_soccer_platform, RoboSoccerPlatform.PlayerInputAggregator,
   aggregation_interval_ms: 10,
   aggregation_function_name: :average,
-  speed_coefficient: 0.25,
+  speed_coefficient: 0.5,
   robot_configs: %{
     "red" => %{
       robot_ip_address: System.fetch_env!("RED_ROBOT_IP"),
