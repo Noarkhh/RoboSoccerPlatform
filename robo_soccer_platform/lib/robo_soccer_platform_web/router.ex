@@ -10,7 +10,7 @@ defmodule RoboSoccerPlatformWeb.Router do
     plug(:put_secure_browser_headers)
   end
 
-  pipeline :controller do
+  pipeline :game_controller do
     plug(:browser)
     plug(:auth)
   end
@@ -19,10 +19,10 @@ defmodule RoboSoccerPlatformWeb.Router do
     plug(:accepts, ["json"])
   end
 
-  scope "/controller", RoboSoccerPlatformWeb do
-    pipe_through(:controller)
+  scope "/dashboard", RoboSoccerPlatformWeb do
+    pipe_through(:game_controller)
 
-    live "/", Controller
+    live "/", GameDashboard
   end
 
   scope "/", RoboSoccerPlatformWeb do

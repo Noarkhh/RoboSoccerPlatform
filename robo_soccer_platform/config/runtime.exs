@@ -16,7 +16,7 @@ import Config
 #
 # Alternatively, you can use `mix phx.gen.release` to generate a `bin/server`
 # script that automatically sets the env var above.
-config :robo_soccer_platform, RoboSoccerPlatform.PlayerInputAggregator,
+config :robo_soccer_platform, RoboSoccerPlatform.GameController,
   aggregation_interval_ms: 10,
   aggregation_function_name: :average,
   speed_coefficient: 0.5,

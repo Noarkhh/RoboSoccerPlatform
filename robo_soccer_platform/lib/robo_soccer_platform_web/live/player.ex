@@ -1,14 +1,9 @@
 defmodule RoboSoccerPlatformWeb.Player do
   use RoboSoccerPlatformWeb, :live_view
 
-  @join_game "join_game"
-
   alias RoboSoccerPlatformWeb.Player.Utils
-  alias RoboSoccerPlatformWeb.Endpoint
 
   def mount(_params, _session, socket) do
-    Endpoint.subscribe(@join_game)
-
     socket
     |> assign(id: UUID.uuid4())
     |> assign(form: %{"errors" => []})
@@ -66,49 +61,27 @@ defmodule RoboSoccerPlatformWeb.Player do
 
   def handle_event("submit", %{"team" => team}, socket) do
     form = Utils.put_form_errors(socket.assigns.form)
+    socket = socket |> assign(form: form)
 
-    if form["errors"] == [] do
-      Endpoint.broadcast_from(
-        self(),
-        @join_game,
-        "request",
-        %{id: socket.assigns.id, team: team, code: socket.assigns.form["room_code"]}
-      )
+    if form["errors"] != [] do
+      {:noreply, socket}
+    else
+      if RoboSoccerPlatform.GameController.room_code_correct?(socket.assigns.form["room_code"]) do
+        path =
+          "/player/steering?" <>
+            URI.encode_query(
+              team: team,
+              username: socket.assigns.form["username"],
+              room_code: socket.assigns.form["room_code"],
+              id: socket.assigns.id
+            )
+
+        {:noreply, push_navigate(socket, to: path)}
+      else
+        {:noreply, put_flash(socket, :error, "Niepoprawny kod pokoju, spróbuj ponownie")}
+      end
     end
-
-    {:noreply, assign(socket, form: form)}
   end
-
-  # ignore other players requests
-  def handle_info(%{topic: @join_game, event: "request"}, socket), do: {:noreply, socket}
-
-  def handle_info(
-        %{topic: @join_game, event: "response", payload: %{code: :error, id: id}},
-        socket
-      )
-      when id == socket.assigns.id do
-    {:noreply, put_flash(socket, :error, "ZŁY NUMER POKOJU, SPRÓBUJ PONOWNIE")}
-  end
-
-  def handle_info(
-        %{topic: @join_game, event: "response", payload: %{id: id, team: team}},
-        socket
-      )
-      when id == socket.assigns.id do
-    path =
-      "/player/steering?" <>
-        URI.encode_query(
-          team: team,
-          username: socket.assigns.form["username"],
-          room_code: socket.assigns.form["room_code"],
-          id: socket.assigns.id
-        )
-
-    {:noreply, push_navigate(socket, to: path)}
-  end
-
-  # ignore responses to other player
-  def handle_info(%{topic: @join_game, event: "response"}, socket), do: {:noreply, socket}
 
   attr :team, :any, required: true
   attr :class, :any, default: ""
