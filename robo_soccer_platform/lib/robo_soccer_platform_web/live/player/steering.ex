@@ -34,8 +34,8 @@ defmodule RoboSoccerPlatformWeb.Player.Steering do
   end
 
   @impl true
-  def handle_params(_params, _uri, socket) do
-    {:noreply, socket}
+  def mount(_bad_params, _session, socket) do
+    {:ok, push_navigate(socket, to: "/player")}
   end
 
   @impl true
