@@ -18,7 +18,7 @@ defmodule RoboSoccerPlatform.GameController do
           | {:robot_configs, %{RoboSoccerPlatform.team() => robot_config()}}
           | {:speed_coefficient, float()}
   @type options :: [option()]
-  @type game_state :: :lobby | :started | :stopped | :finished
+  @type game_state :: :lobby | :started | :stopped
   @type player_input :: %{player: Player.t(), x: float(), y: float()}
 
   defmodule State do
@@ -66,7 +66,8 @@ defmodule RoboSoccerPlatform.GameController do
   end
 
   @spec init_game_dashboard(pid()) ::
-          {room_code :: String.t(), RoboSoccerPlatformWeb.GameDashboard.steering_state()}
+          {room_code :: String.t(), RoboSoccerPlatformWeb.GameDashboard.steering_state(),
+           game_state()}
   def init_game_dashboard(game_dashboard_pid) do
     GenServer.call(:game_controller, {:init_game_dashboard, game_dashboard_pid})
   end
@@ -111,7 +112,8 @@ defmodule RoboSoccerPlatform.GameController do
       robot_instructions: state.robot_instructions
     }
 
-    {:reply, {state.room_code, steering_state}, %{state | game_dashboard_pid: game_dashboard_pid}}
+    {:reply, {state.room_code, steering_state, state.game_state},
+     %{state | game_dashboard_pid: game_dashboard_pid}}
   end
 
   @impl true
@@ -174,6 +176,23 @@ defmodule RoboSoccerPlatform.GameController do
        | robot_instructions: robot_instructions,
          game_state: :stopped,
          aggregation_timer: nil
+     }}
+  end
+
+  @impl true
+  def handle_info(%{topic: @game_state, event: "next_match"}, state) do
+    Logger.debug("Preparing for a new match, unregistering all players, generating new room code")
+
+    if state.aggregation_timer, do: Process.cancel_timer(state.aggregation_timer)
+
+    {:noreply,
+     %{
+       state
+       | game_state: :lobby,
+         aggregation_timer: nil,
+         player_inputs: %{},
+         player_pids: %{},
+         room_code: generate_room_code()
      }}
   end
 
@@ -276,7 +295,7 @@ defmodule RoboSoccerPlatform.GameController do
       robot_connections: robot_connections,
       aggregation_interval_ms: aggregation_interval_ms,
       speed_coefficient: speed_coefficient,
-      room_code: Enum.random(1000..9999) |> to_string,
+      room_code: generate_room_code(),
       aggregation_function:
         Function.capture(RoboSoccerPlatform.AggregationFunctions, aggregation_function_name, 1)
     }
@@ -319,5 +338,10 @@ defmodule RoboSoccerPlatform.GameController do
     )
 
     %{state | player_inputs: player_inputs}
+  end
+
+  @spec generate_room_code() :: String.t()
+  def generate_room_code() do
+    Enum.random(1000..9999) |> to_string
   end
 end
