@@ -105,13 +105,9 @@ defmodule RoboSoccerPlatform.GameController do
 
   @impl true
   def handle_call({:init_game_dashboard, game_dashboard_pid}, _from, state) do
-    robot_instructions =
-      state.robot_connections
-      |> Map.new(fn {team, _robot_connection} -> {team, %{x: 0.0, y: 0.0}} end)
-
     steering_state = %{
       player_inputs: state.player_inputs,
-      robot_instructions: robot_instructions
+      robot_instructions: state.robot_instructions
     }
 
     {:reply, {state.room_code, steering_state}, %{state | game_dashboard_pid: game_dashboard_pid}}
@@ -163,7 +159,7 @@ defmodule RoboSoccerPlatform.GameController do
   @impl true
   def handle_info(%{topic: @game_state, event: "stop_game"}, state) do
     robot_instructions =
-      state.robot_connections
+      state.robot_instructions
       |> Map.new(fn {team, robot_connection} ->
         RobotConnection.send_instruction(robot_connection, %{x: 0.0, y: 0.0})
         {team, %{x: 0.0, y: 0.0}}
