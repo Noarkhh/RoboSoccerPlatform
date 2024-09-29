@@ -4,7 +4,6 @@ defmodule RoboSoccerPlatform.GameController do
   require Logger
   alias RoboSoccerPlatform.{Player, RobotConnection}
 
-  @player_inputs "player_inputs"
   @game_state "game_state"
 
   @default_aggregation_interval_ms 100
@@ -162,21 +161,6 @@ defmodule RoboSoccerPlatform.GameController do
      }}
   end
 
-  # @impl true
-  # def handle_info(
-  # %{topic: @player_inputs, event: "register_player", payload: player},
-  # state
-  # ) do
-  # player_inputs = Map.put(state.player_inputs, player.id, %{player: player, x: 0.0, y: 0.0})
-
-  # Logger.debug("""
-  # New player registered: #{inspect(player)}
-  # Players currently registered: #{inspect(Enum.map(player_inputs, fn {_id, input} -> input.player end))}
-  # """)
-
-  # {:noreply, %{state | player_inputs: player_inputs}}
-  # end
-
   @impl true
   def handle_info(%{topic: @game_state, event: "stop_game"}, state) do
     robot_instructions =
@@ -196,25 +180,6 @@ defmodule RoboSoccerPlatform.GameController do
          aggregation_timer: nil
      }}
   end
-
-  # @impl true
-  # def handle_info(%{topic: @player_inputs, event: "unregister_player", payload: player_id}, state) do
-  # player_inputs =
-  # case Map.pop(state.player_inputs, player_id) do
-  # {%{player: player}, player_inputs} ->
-  # Logger.debug("""
-  # Player unregistered: #{inspect(player)}
-  # Players currently registered: #{inspect(Enum.map(player_inputs, fn {_id, input} -> input.player end))}
-  # """)
-
-  # player_inputs
-
-  # {nil, player_inputs} ->
-  # player_inputs
-  # end
-
-  # {:noreply, %{state | player_inputs: player_inputs}}
-  # end
 
   @impl true
   def handle_info({:DOWN, _ref, :process, player_pid, _reason}, state) do
@@ -252,17 +217,6 @@ defmodule RoboSoccerPlatform.GameController do
   end
 
   @impl true
-  def handle_info(
-        %{topic: @player_inputs, event: "joystick_position", payload: %{x: x, y: y, id: id}},
-        %State{player_inputs: player_inputs} = state
-      )
-      when is_map_key(player_inputs, id) do
-    player_input = %{state.player_inputs[id] | x: x, y: y}
-    state = %{state | player_inputs: %{state.player_inputs | id => player_input}}
-    {:noreply, state}
-  end
-
-  @impl true
   def handle_info(:aggregate, %State{game_state: :started} = state) do
     robot_instructions =
       state.robot_connections
@@ -296,7 +250,7 @@ defmodule RoboSoccerPlatform.GameController do
   @impl true
   def handle_info(msg, state) do
     Logger.warning("""
-    PLAYER INPUT AGGREGATOR:  Ignoring message: #{inspect(msg)}
+    [#{inspect(__MODULE__)}] Ignoring message: #{inspect(msg)}
     State: #{inspect(state)}
     """)
 
