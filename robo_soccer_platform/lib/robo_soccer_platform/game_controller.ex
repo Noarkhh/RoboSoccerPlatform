@@ -33,7 +33,7 @@ defmodule RoboSoccerPlatform.GameController do
             game_state: GameController.game_state(),
             aggregation_timer: reference() | nil,
             room_code: String.t(),
-            game_controller_web_pid: pid() | nil
+            game_dashboard_pid: pid() | nil
           }
 
     @enforce_keys [
@@ -50,7 +50,7 @@ defmodule RoboSoccerPlatform.GameController do
                   player_pids: %{},
                   game_state: :lobby,
                   aggregation_timer: nil,
-                  game_controller_web_pid: nil
+                  game_dashboard_pid: nil
                 ]
   end
 
@@ -64,15 +64,15 @@ defmodule RoboSoccerPlatform.GameController do
     GenServer.call(:game_controller, {:room_code_correct?, room_code})
   end
 
-  @spec get_init_data(pid()) ::
-          {room_code :: String.t(), RoboSoccerPlatformWeb.GameController.steering_state()}
-  def get_init_data(game_controller_web_pid) do
-    GenServer.call(:game_controller, {:get_init_data, game_controller_web_pid})
+  @spec init_game_dashboard(pid()) ::
+          {room_code :: String.t(), RoboSoccerPlatformWeb.GameDashboard.steering_state()}
+  def init_game_dashboard(game_dashboard_pid) do
+    GenServer.call(:game_controller, {:init_game_dashboard, game_dashboard_pid})
   end
 
-  @spec register_player(pid(), Player.t()) :: :ok
-  def register_player(pid, player) do
-    GenServer.cast(:game_controller, {:register_player, pid, player})
+  @spec register_player(Player.t(), pid()) :: :ok
+  def register_player(player, player_pid) do
+    GenServer.cast(:game_controller, {:register_player, player, player_pid})
   end
 
   @spec update_player_input(String.t(), float(), float()) :: :ok
@@ -104,7 +104,7 @@ defmodule RoboSoccerPlatform.GameController do
   end
 
   @impl true
-  def handle_call({:get_init_data, game_controller_web_pid}, _from, state) do
+  def handle_call({:init_game_dashboard, game_dashboard_pid}, _from, state) do
     robot_instructions =
       state.robot_connections
       |> Map.new(fn {team, _robot_connection} -> {team, %{x: 0.0, y: 0.0}} end)
@@ -114,17 +114,16 @@ defmodule RoboSoccerPlatform.GameController do
       robot_instructions: robot_instructions
     }
 
-    {:reply, {state.room_code, steering_state},
-     %{state | game_controller_web_pid: game_controller_web_pid}}
+    {:reply, {state.room_code, steering_state}, %{state | game_dashboard_pid: game_dashboard_pid}}
   end
 
   @impl true
-  def handle_cast({:register_player, pid, player}, state) do
+  def handle_cast({:register_player, player, player_pid}, state) do
     player_inputs = Map.put(state.player_inputs, player.id, %{player: player, x: 0.0, y: 0.0})
-    Process.monitor(pid)
-    player_pids = Map.put(state.player_pids, pid, player.id)
+    Process.monitor(player_pid)
+    player_pids = Map.put(state.player_pids, player_pid, player.id)
 
-    RoboSoccerPlatformWeb.GameController.update_steering_state(state.game_controller_web_pid, %{
+    RoboSoccerPlatformWeb.GameDashboard.update_steering_state(state.game_dashboard_pid, %{
       player_inputs: player_inputs,
       robot_instructions: state.robot_instructions
     })
@@ -203,8 +202,8 @@ defmodule RoboSoccerPlatform.GameController do
           Players currently registered: #{inspect(Enum.map(player_inputs, fn {_id, input} -> input.player end))}
           """)
 
-          RoboSoccerPlatformWeb.GameController.update_steering_state(
-            state.game_controller_web_pid,
+          RoboSoccerPlatformWeb.GameDashboard.update_steering_state(
+            state.game_dashboard_pid,
             %{
               player_inputs: player_inputs,
               robot_instructions: state.robot_instructions
@@ -234,7 +233,7 @@ defmodule RoboSoccerPlatform.GameController do
         {team, instruction}
       end)
 
-    RoboSoccerPlatformWeb.GameController.update_steering_state(state.game_controller_web_pid, %{
+    RoboSoccerPlatformWeb.GameDashboard.update_steering_state(state.game_dashboard_pid, %{
       player_inputs: state.player_inputs,
       robot_instructions: robot_instructions
     })

@@ -1,8 +1,8 @@
-defmodule RoboSoccerPlatformWeb.GameController do
+defmodule RoboSoccerPlatformWeb.GameDashboard do
   require Logger
   use RoboSoccerPlatformWeb, :live_view
 
-  import RoboSoccerPlatformWeb.GameController.Components,
+  import RoboSoccerPlatformWeb.GameDashboard.Components,
     only: [before_game_view: 1, in_game_view: 1]
 
   alias RoboSoccerPlatformWeb.Endpoint
@@ -29,9 +29,7 @@ defmodule RoboSoccerPlatformWeb.GameController do
 
   @impl true
   def mount(_params, _session, socket) do
-    {room_code, steering_state} = RoboSoccerPlatform.GameController.get_init_data(self())
-
-    # Endpoint.broadcast_from(self(), @game_state, "stop_game", nil)
+    {room_code, steering_state} = RoboSoccerPlatform.GameController.init_game_dashboard(self())
 
     socket
     |> assign(room_code: room_code)
