@@ -1,7 +1,7 @@
-defmodule RoboSoccerPlatformWeb.Controller.Components do
+defmodule RoboSoccerPlatformWeb.GameController.Components do
   use RoboSoccerPlatformWeb, :component
 
-  alias RoboSoccerPlatformWeb.Controller.Utils
+  alias RoboSoccerPlatformWeb.GameController.Utils
 
   attr :teams, :map, required: true
   attr :room_code, :string, required: true
@@ -32,7 +32,7 @@ defmodule RoboSoccerPlatformWeb.Controller.Components do
       </div>
     </div>
 
-    <.teams red_players={@teams.red.players} green_players={@teams.green.players} />
+    <.teams red_players={@teams["red"].player_inputs} green_players={@teams["green"].player_inputs} />
 
     <div class="flex justify-center">
       <.button phx-click="start_game" class="bg-white !text-black !text-4xl">
@@ -48,17 +48,8 @@ defmodule RoboSoccerPlatformWeb.Controller.Components do
   attr :room_code, :string, required: true
 
   def in_game_view(assigns) do
-    green_direction =
-      Utils.point_to_direction(%{
-        x: assigns.teams.green.instruction.x,
-        y: assigns.teams.green.instruction.y
-      })
-
-    red_direction =
-      Utils.point_to_direction(%{
-        x: assigns.teams.red.instruction.x,
-        y: assigns.teams.red.instruction.y
-      })
+    green_direction = Utils.point_to_direction(assigns.teams["green"].robot_instruction)
+    red_direction = Utils.point_to_direction(assigns.teams["red"].robot_instruction)
 
     assigns =
       assigns
@@ -69,7 +60,10 @@ defmodule RoboSoccerPlatformWeb.Controller.Components do
     <div class="flex flex-1">
       <div class="grid grid-flow-col auto-cols-fr w-full">
         <div class="flex flex-col flex-1 col-span-2">
-          <.teams red_players={@teams.red.players} green_players={@teams.green.players} />
+          <.teams
+            red_players={@teams["red"].player_inputs}
+            green_players={@teams["green"].player_inputs}
+          />
         </div>
 
         <div class="flex flex-col items-center gap-16 col-span-2">
@@ -94,7 +88,7 @@ defmodule RoboSoccerPlatformWeb.Controller.Components do
         </div>
         <div class="flex flex-col flex-1 items-center gap-8">
           <.time_left seconds={@seconds_left} />
-          <.score red_goals={@teams.red.goals} green_goals={@teams.green.goals} />
+          <.score red_goals={@teams["red"].goals} green_goals={@teams["green"].goals} />
           <.directions red_direction={@red_direction} green_direction={@green_direction} />
         </div>
       </div>
@@ -175,7 +169,7 @@ defmodule RoboSoccerPlatformWeb.Controller.Components do
     ~H"""
     <div class="flex-1 truncate">
       <div class="truncate">
-        <%= @player.username %>
+        <%= @player.player.username %>
       </div>
     </div>
 
