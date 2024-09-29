@@ -117,6 +117,10 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
       <.button phx-click="reset_score" class="bg-white !text-black !text-4xl">
         ZRESETUJ WYNIK
       </.button>
+
+      <.button phx-click="new_room" class="bg-white !text-black !text-4xl">
+        NOWY POKÓJ
+      </.button>
     </div>
     """
   end
