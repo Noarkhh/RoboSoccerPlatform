@@ -19,10 +19,10 @@ defmodule RoboSoccerPlatformWeb.Router do
     plug(:accepts, ["json"])
   end
 
-  scope "/controller", RoboSoccerPlatformWeb do
+  scope "/dashboard", RoboSoccerPlatformWeb do
     pipe_through(:game_controller)
 
-    live "/", GameController
+    live "/", GameDashboard
   end
 
   scope "/", RoboSoccerPlatformWeb do
