@@ -12,36 +12,39 @@ defmodule RoboSoccerPlatformWeb.Player.Steering do
   @controller "controller"
   @disconnect "disconnect"
 
-  @spec unregister(String.t()) :: :ok
-  def unregister(player_id) do
-    Logger.debug("Unregistering player #{player_id}")
+  # @spec unregister(String.t()) :: :ok
+  # def unregister(player_id) do
+  # Logger.debug("Unregistering player #{player_id}")
 
-    RoboSoccerPlatformWeb.Endpoint.broadcast_from(
-      self(),
-      @controller,
-      "unregister_player",
-      player_id
-    )
-  end
+  # RoboSoccerPlatformWeb.Endpoint.broadcast_from(
+  # self(),
+  # @controller,
+  # "unregister_player",
+  # player_id
+  # )
+  # end
 
   @impl true
   def mount(params, _session, socket) do
     Endpoint.subscribe(@game_state)
-    Endpoint.subscribe(@disconnect)
+    # Endpoint.subscribe(@disconnect)
 
     player = %Player{id: params["id"], team: params["team"], username: params["username"]}
-    Endpoint.broadcast_from(self(), @controller, "register_player", player)
-    RoboSoccerPlatformWeb.Player.PlayersMonitor.monitor(self(), player.id)
 
-    if RoboSoccerPlatform.PlayerInputAggregator.is_game_started() do
-      push_event(socket, "game_started", %{})
-    else
-      push_event(socket, "game_stopped", %{})
+    if connected?(socket) do
+      RoboSoccerPlatform.GameController.register_player(self(), player)
     end
-    |> assign(player: player)
-    |> assign(room_code: params["room_code"])
-    # |> restore()
-    |> then(&{:ok, &1})
+
+    if RoboSoccerPlatform.GameController.room_code_correct?(params["room_code"]) do
+      case RoboSoccerPlatform.GameController.get_game_state() do
+        :started -> push_event(socket, "game_started", %{})
+        _not_started -> push_event(socket, "game_stopped", %{})
+      end
+      |> assign(player: player)
+      |> then(&{:ok, &1})
+    else
+      {:ok, push_navigate(socket, to: "/player")}
+    end
   end
 
   @impl true
@@ -70,12 +73,18 @@ defmodule RoboSoccerPlatformWeb.Player.Steering do
     {x, ""} = Integer.parse(x_str)
     {y, ""} = Integer.parse(y_str)
 
-    Endpoint.broadcast_from(self(), @controller, "joystick_position", %{
-      x: x / 100,
-      y: y / 100,
-      id: socket.assigns.player.id,
-      room_code: socket.assigns.room_code
-    })
+    # Endpoint.broadcast_from(self(), @controller, "joystick_position", %{
+    # x: x / 100,
+    # y: y / 100,
+    # id: socket.assigns.player.id,
+    # room_code: socket.assigns.room_code
+    # })
+
+    RoboSoccerPlatform.GameController.update_player_input(
+      socket.assigns.player.id,
+      x / 100,
+      y / 100
+    )
 
     {:noreply, socket}
   end

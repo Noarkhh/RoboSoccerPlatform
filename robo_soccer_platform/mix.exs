@@ -53,7 +53,8 @@ defmodule RoboSoccerPlatform.MixProject do
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.1.1"},
       {:bandit, "~> 1.2"},
-      {:elixir_uuid, "~> 1.2"}
+      {:elixir_uuid, "~> 1.2"},
+      {:bunch, "~> 1.6"}
     ]
   end
 

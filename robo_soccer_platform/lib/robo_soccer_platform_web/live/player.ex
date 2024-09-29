@@ -66,17 +66,26 @@ defmodule RoboSoccerPlatformWeb.Player do
 
   def handle_event("submit", %{"team" => team}, socket) do
     form = Utils.put_form_errors(socket.assigns.form)
+    socket = socket |> assign(form: form)
 
-    if form["errors"] == [] do
-      Endpoint.broadcast_from(
-        self(),
-        @join_game,
-        "request",
-        %{id: socket.assigns.id, team: team, code: socket.assigns.form["room_code"]}
-      )
+    if form["errors"] != [] do
+      {:noreply, socket}
+    else
+      if RoboSoccerPlatform.GameController.room_code_correct?(socket.assigns.form["room_code"]) do
+        path =
+          "/player/steering?" <>
+            URI.encode_query(
+              team: team,
+              username: socket.assigns.form["username"],
+              room_code: socket.assigns.form["room_code"],
+              id: socket.assigns.id
+            )
+
+        {:noreply, push_navigate(socket, to: path)}
+      else
+        {:noreply, put_flash(socket, :error, "Niepoprawny kod pokoju, spróbuj ponownie")}
+      end
     end
-
-    {:noreply, assign(socket, form: form)}
   end
 
   # ignore other players requests

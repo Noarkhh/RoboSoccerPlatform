@@ -1,4 +1,4 @@
-defmodule RoboSoccerPlatformWeb.Controller.Assigns do
+defmodule RoboSoccerPlatformWeb.GameController.Assigns do
   import Phoenix.Component, only: [assign: 2]
 
   def assign_teams(socket) do
