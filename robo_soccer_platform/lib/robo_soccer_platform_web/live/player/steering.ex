@@ -76,4 +76,9 @@ defmodule RoboSoccerPlatformWeb.Player.Steering do
     |> push_event("game_stopped", %{})
     |> then(&{:noreply, &1})
   end
+
+  @impl true
+  def handle_info(%{topic: @game_state, event: "next_match"}, socket) do
+    {:noreply, push_navigate(socket, to: "/player")}
+  end
 end
