@@ -159,7 +159,7 @@ defmodule RoboSoccerPlatform.GameController do
   @impl true
   def handle_info(%{topic: @game_state, event: "stop_game"}, state) do
     robot_instructions =
-      state.robot_instructions
+      state.robot_connections
       |> Map.new(fn {team, robot_connection} ->
         RobotConnection.send_instruction(robot_connection, %{x: 0.0, y: 0.0})
         {team, %{x: 0.0, y: 0.0}}
