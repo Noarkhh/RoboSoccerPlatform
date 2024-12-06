@@ -313,7 +313,7 @@ defmodule RoboSoccerPlatform.GameController do
   end
 
   @spec update_dashboard_steering_state(State.t()) :: :ok
-  def update_dashboard_steering_state(state) do
+  defp update_dashboard_steering_state(state) do
     GameDashboard.update_steering_state(state.game_dashboard_pid, %{
       player_inputs: state.player_inputs,
       robot_instructions: state.robot_instructions
@@ -346,7 +346,7 @@ defmodule RoboSoccerPlatform.GameController do
   end
 
   @spec generate_room_code() :: String.t()
-  def generate_room_code() do
+  defp generate_room_code() do
     Enum.random(1000..9999) |> to_string
   end
 end
