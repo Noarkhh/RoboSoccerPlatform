@@ -61,7 +61,7 @@ defmodule RoboSoccerPlatformWeb.Player do
 
   def handle_event("submit", %{"team" => team}, socket) do
     form = Utils.put_form_errors(socket.assigns.form)
-    socket = socket |> assign(form: form)
+    socket = assign(socket, form: form)
 
     if form["errors"] != [] do
       {:noreply, socket}
