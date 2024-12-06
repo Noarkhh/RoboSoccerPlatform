@@ -7,12 +7,19 @@ defmodule RoboSoccerPlatformWeb.Controller.Components do
   attr :room_code, :string, required: true
 
   def before_game_view(assigns) do
+    assigns =
+      assigns
+      |> assign(wifi_ssid: System.fetch_env!("WIFI_SSID"))
+      |> assign(wifi_psk: System.fetch_env!("WIFI_PSK"))
+      |> assign(ip: System.fetch_env!("SERVER_IP"))
+      |> assign(port: System.get_env("PHX_PORT", "4000"))
+
     ~H"""
     <div class="flex justify-evenly items-center col-span-2 ">
       <div class="flex flex-col items-center gap-4">
         <div class="text-7xl">WiFi</div>
         <img src="images/qr_wifi.png" class="w-[260px]" />
-        <div class="text-xl">nazwa: robo | hasło: roborobo</div>
+        <div class="text-xl">nazwa: <%= @wifi_ssid %> | hasło: <%= @wifi_psk %></div>
       </div>
       <div class="flex flex-col text-center gap-8">
         <div class="text-5xl">Kod Pokoju</div>
@@ -21,7 +28,7 @@ defmodule RoboSoccerPlatformWeb.Controller.Components do
       <div class="flex flex-col items-center gap-4">
         <div class="text-7xl">Strona</div>
         <img src="images/qr_player_link.png" class="w-[260px]" />
-        <div class="text-xl">http://192.168.0.2:4000</div>
+        <div class="text-xl">http://<%= @ip %>:<%= @port %></div>
       </div>
     </div>
 
@@ -75,12 +82,12 @@ defmodule RoboSoccerPlatformWeb.Controller.Components do
               <div class="flex flex-col items-center gap-4">
                 <div class="text-7xl">WiFi</div>
                 <img src="images/qr_wifi.png" class="w-[260px]" />
-                <div class="text-xl">nazwa: robo | hasło: roborobo</div>
+                <div class="text-xl">nazwa: <%= @wifi_ssid %> | hasło: <%= @wifi_psk %></div>
               </div>
               <div class="flex flex-col items-center gap-4">
                 <div class="text-7xl">Strona</div>
                 <img src="images/qr_player_link.png" class="w-[260px]" />
-                <div class="text-xl">http://192.168.0.2:4000</div>
+                <div class="text-xl">http://<%= @ip %>:<%= @port %></div>
               </div>
             </div>
           </div>
