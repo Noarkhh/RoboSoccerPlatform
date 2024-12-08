@@ -2,6 +2,7 @@ defmodule RoboSoccerPlatform.GameController do
   use GenServer
 
   require Logger
+  alias Hex.State
   alias RoboSoccerPlatform.{Player, RobotConnection}
 
   @game_state "game_state"
@@ -187,26 +188,13 @@ defmodule RoboSoccerPlatform.GameController do
         {:noreply, state}
 
       {player_id, player_pids} ->
-        if player_pids |> Map.values() |> Enum.member?(player_id) do
+        state = %{state | player_pids: player_pids}
+
+        if player_id in Map.values(player_pids) do
           Logger.warning("Duplicate player, not unregistering, pid: #{inspect(player_pid)}")
-          {:noreply, %{state | player_pids: player_pids}}
+          {:noreply, state}
         else
-          {player_input, player_inputs} = Map.pop(state.player_inputs, player_id)
-
-          Logger.debug("""
-          Player unregistered: #{inspect(player_input.player)}
-          Players currently registered: #{inspect(Enum.map(player_inputs, fn {_id, input} -> input.player end))}
-          """)
-
-          RoboSoccerPlatformWeb.GameDashboard.update_steering_state(
-            state.game_dashboard_pid,
-            %{
-              player_inputs: player_inputs,
-              robot_instructions: state.robot_instructions
-            }
-          )
-
-          {:noreply, %{state | player_inputs: player_inputs, player_pids: player_pids}}
+          {:noreply, unregister_player(player_id, state)}
         end
     end
   end
@@ -311,5 +299,25 @@ defmodule RoboSoccerPlatform.GameController do
   @spec start_aggregation_timer(pos_integer()) :: reference()
   defp start_aggregation_timer(aggregation_interval_ms) do
     Process.send_after(self(), :aggregate, aggregation_interval_ms)
+  end
+
+  @spec unregister_player(String.t(), State.t()) :: State.t()
+  defp unregister_player(player_id, state) do
+    {player_input, player_inputs} = Map.pop(state.player_inputs, player_id)
+
+    Logger.debug("""
+    Player unregistered: #{inspect(player_input.player)}
+    Players currently registered: #{inspect(Enum.map(player_inputs, fn {_id, input} -> input.player end))}
+    """)
+
+    RoboSoccerPlatformWeb.GameDashboard.update_steering_state(
+      state.game_dashboard_pid,
+      %{
+        player_inputs: player_inputs,
+        robot_instructions: state.robot_instructions
+      }
+    )
+
+    %{state | player_inputs: player_inputs}
   end
 end
