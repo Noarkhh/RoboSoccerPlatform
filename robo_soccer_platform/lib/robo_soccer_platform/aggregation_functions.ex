@@ -1,4 +1,6 @@
 defmodule RoboSoccerPlatform.AggregationFunctions do
+  @type signature :: ([float()] -> float())
+
   @spec median([float()]) :: float()
   def median([]) do
     0.0
