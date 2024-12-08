@@ -5,20 +5,19 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
 
   attr :teams, :map, required: true
   attr :room_code, :string, required: true
+  attr :wifi_ssid, :string, required: true
+  attr :wifi_psk, :string, required: true
+  attr :ip, :string, required: true
+  attr :port, :string, required: true
+  attr :wifi_qr_svg, :string, required: true
+  attr :player_url_qr_svg, :string, required: true
 
   def before_game_view(assigns) do
-    assigns =
-      assigns
-      |> assign(wifi_ssid: System.fetch_env!("WIFI_SSID"))
-      |> assign(wifi_psk: System.fetch_env!("WIFI_PSK"))
-      |> assign(ip: System.fetch_env!("SERVER_IP"))
-      |> assign(port: System.get_env("PHX_PORT", "4000"))
-
     ~H"""
     <div class="flex justify-evenly items-center col-span-2 ">
       <div class="flex flex-col items-center gap-4">
         <div class="text-7xl">WiFi</div>
-        <img src="images/qr_wifi.png" class="w-[260px]" />
+        <%= @wifi_qr_svg %>
         <div class="text-xl">nazwa: <%= @wifi_ssid %> | hasło: <%= @wifi_psk %></div>
       </div>
       <div class="flex flex-col text-center gap-8">
@@ -27,7 +26,7 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
       </div>
       <div class="flex flex-col items-center gap-4">
         <div class="text-7xl">Strona</div>
-        <img src="images/qr_player_link.png" class="w-[260px]" />
+        <%= @player_url_qr_svg %>
         <div class="text-xl">http://<%= @ip %>:<%= @port %></div>
       </div>
     </div>
@@ -46,6 +45,12 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
   attr :game_state, :atom, required: true
   attr :seconds_left, :integer, required: true
   attr :room_code, :string, required: true
+  attr :wifi_ssid, :string, required: true
+  attr :wifi_psk, :string, required: true
+  attr :ip, :string, required: true
+  attr :port, :string, required: true
+  attr :wifi_qr_svg, :string, required: true
+  attr :player_url_qr_svg, :string, required: true
 
   def in_game_view(assigns) do
     green_direction = Utils.point_to_direction(assigns.teams["green"].robot_instruction)
@@ -79,12 +84,12 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
             <div class="flex text-center gap-16">
               <div class="flex flex-col items-center gap-4">
                 <div class="text-7xl">WiFi</div>
-                <img src="images/qr_wifi.png" class="w-[260px]" />
+                <%= @wifi_qr_svg %>
                 <div class="text-xl">nazwa: <%= @wifi_ssid %> | hasło: <%= @wifi_psk %></div>
               </div>
               <div class="flex flex-col items-center gap-4">
                 <div class="text-7xl">Strona</div>
-                <img src="images/qr_player_link.png" class="w-[260px]" />
+                <%= @player_url_qr_svg %>
                 <div class="text-xl">http://<%= @ip %>:<%= @port %></div>
               </div>
             </div>
@@ -258,6 +263,7 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
     """
   end
 
+  @spec pad_to_two_digits(integer()) :: String.t()
   defp pad_to_two_digits(number) do
     number
     |> Integer.to_string()
