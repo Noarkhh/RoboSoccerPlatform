@@ -182,7 +182,14 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
 
   @spec render_wifi_qr_code(String.t(), String.t()) :: Phoenix.HTML.safe()
   defp render_wifi_qr_code(wifi_ssid, wifi_psk) do
-    "WIFI:S:#{wifi_ssid};T:WPA;P:#{wifi_psk};;" |> render_qr_code()
+    # Add padding so that the qr codes are the same size (between 33 and 53 character strings they are are 29x29)
+    wifi_string = "WIFI:S:#{wifi_ssid};T:WPA;P:#{wifi_psk};;"
+
+    if String.length(wifi_string) > 53 do
+      Logger.warning("Please wifi name + password shorter than 36 for nicer qr code rendering")
+    end
+
+    wifi_string |> String.pad_trailing(33) |> render_qr_code()
   end
 
   @spec render_player_url_qr_code(String.t(), String.t(), String.t()) :: Phoenix.HTML.safe()
