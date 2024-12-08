@@ -31,9 +31,19 @@ config :robo_soccer_platform, RoboSoccerPlatform.GameController,
     }
   }
 
+config :robo_soccer_platform, RoboSoccerPlatformWeb.GameDashboard,
+  wifi_ssid: System.fetch_env!("WIFI_SSID"),
+  wifi_psk: System.fetch_env!("WIFI_PSK"),
+  ip: System.fetch_env!("SERVER_IP"),
+  port: System.get_env("PHX_PORT", "4000")
+
 if System.get_env("PHX_SERVER") do
   config :robo_soccer_platform, RoboSoccerPlatformWeb.Endpoint, server: true
 end
+
+config :robo_soccer_platform, RoboSoccerPlatformWeb.Router,
+  username: System.fetch_env!("CONTROLLER_USERNAME"),
+  password: System.fetch_env!("CONTROLLER_PASSWORD")
 
 if config_env() == :prod do
   # The secret key base is used to sign/encrypt cookies and other secrets.

@@ -7,18 +7,25 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
   attr :room_code, :string, required: true
 
   def before_game_view(assigns) do
+    IO.inspect(assigns)
+    config = Application.fetch_env!(:robo_soccer_platform, RoboSoccerPlatformWeb.GameDashboard)
+
+    wifi_qr_svg = render_wifi_qr_code(config[:wifi_ssid], config[:wifi_psk])
+    player_url_qr_svg = render_player_url_qr_code(config[:ip], config[:port])
+
     assigns =
       assigns
-      |> assign(wifi_ssid: System.fetch_env!("WIFI_SSID"))
-      |> assign(wifi_psk: System.fetch_env!("WIFI_PSK"))
-      |> assign(ip: System.fetch_env!("SERVER_IP"))
-      |> assign(port: System.get_env("PHX_PORT", "4000"))
+      |> assign(
+        Application.fetch_env!(:robo_soccer_platform, RoboSoccerPlatformWeb.GameDashboard)
+      )
+      |> assign(wifi_qr_svg: wifi_qr_svg)
+      |> assign(player_url_qr_svg: player_url_qr_svg)
 
     ~H"""
     <div class="flex justify-evenly items-center col-span-2 ">
       <div class="flex flex-col items-center gap-4">
         <div class="text-7xl">WiFi</div>
-        <img src="images/qr_wifi.png" class="w-[260px]" />
+        <%= @wifi_qr_svg %>
         <div class="text-xl">nazwa: <%= @wifi_ssid %> | hasło: <%= @wifi_psk %></div>
       </div>
       <div class="flex flex-col text-center gap-8">
@@ -27,7 +34,7 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
       </div>
       <div class="flex flex-col items-center gap-4">
         <div class="text-7xl">Strona</div>
-        <img src="images/qr_player_link.png" class="w-[260px]" />
+        <%= @player_url_qr_svg %>
         <div class="text-xl">http://<%= @ip %>:<%= @port %></div>
       </div>
     </div>
@@ -258,9 +265,30 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
     """
   end
 
+  @spec pad_to_two_digits(integer()) :: String.t()
   defp pad_to_two_digits(number) do
     number
     |> Integer.to_string()
     |> String.pad_leading(2, "0")
+  end
+
+  @spec render_wifi_qr_code(String.t(), String.t()) :: Phoenix.HTML.safe()
+  defp render_wifi_qr_code(wifi_ssid, wifi_psk) do
+    "WIFI:S:#{wifi_ssid};T:WPA;P:#{wifi_psk};;" |> render_qr_code()
+  end
+
+  @spec render_player_url_qr_code(String.t(), String.t()) :: Phoenix.HTML.safe()
+  defp render_player_url_qr_code(ip, port) do
+    "http://#{ip}:#{port}" |> render_qr_code()
+  end
+
+  @spec render_qr_code(String.t()) :: Phoenix.HTML.safe()
+  defp render_qr_code(string) do
+    {:ok, qr} =
+      string
+      |> QRCode.create()
+      |> QRCode.render()
+
+    Phoenix.HTML.raw(qr)
   end
 end
