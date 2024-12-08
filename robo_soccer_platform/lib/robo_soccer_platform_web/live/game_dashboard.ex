@@ -51,6 +51,7 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
     |> assign(teams: init_teams(steering_state))
     |> assign(game_state: game_state)
     |> assign(seconds_left: 10 * 60)
+    |> assign(timer: nil)
     |> then(&{:ok, &1})
   end
 
@@ -105,19 +106,20 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
   def handle_event("start_game", _params, socket) do
     Endpoint.broadcast_from(self(), @game_state, "start_game", nil)
 
-    Process.send_after(self(), :tick, 1000)
-
     socket
     |> assign(game_state: :started)
+    |> assign(timer: Process.send_after(self(), :tick, 1000))
     |> then(&{:noreply, &1})
   end
 
   @impl true
   def handle_event("stop_game", _params, socket) do
     Endpoint.broadcast_from(self(), @game_state, "stop_game", nil)
+    Process.cancel_timer(socket.assigns.timer)
 
     socket
     |> assign(game_state: :stopped)
+    |> assign(timer: nil)
     |> then(&{:noreply, &1})
   end
 
@@ -159,10 +161,9 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
     seconds_left = socket.assigns.seconds_left - 1
 
     if seconds_left > 0 do
-      Process.send_after(self(), :tick, 1000)
-
       socket
       |> assign(seconds_left: seconds_left)
+      |> assign(timer: Process.send_after(self(), :tick, 1000))
       |> then(&{:noreply, &1})
     else
       Endpoint.broadcast_from(self(), @game_state, "stop_game", nil)
