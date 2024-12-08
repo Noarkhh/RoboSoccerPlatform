@@ -3,10 +3,11 @@ defmodule RoboSoccerPlatformWeb.Player do
 
   alias RoboSoccerPlatformWeb.Player.Utils
 
-  def mount(_params, _session, socket) do
+  def mount(params, _session, socket) do
     socket
     |> assign(id: UUID.uuid4())
     |> assign(form: %{"errors" => []})
+    |> assign(room_code: Map.get(params, "room_code", ""))
     |> then(&{:ok, &1})
   end
 
@@ -31,7 +32,7 @@ defmodule RoboSoccerPlatformWeb.Player do
           <.input
             phx-debounce="500"
             name="room_code"
-            value=""
+            value={@room_code}
             label="Kod Pokoju"
             errors={@form["errors"]}
             label_class="text-center"

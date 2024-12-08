@@ -7,11 +7,10 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
   attr :room_code, :string, required: true
 
   def before_game_view(assigns) do
-    IO.inspect(assigns)
     config = Application.fetch_env!(:robo_soccer_platform, RoboSoccerPlatformWeb.GameDashboard)
 
     wifi_qr_svg = render_wifi_qr_code(config[:wifi_ssid], config[:wifi_psk])
-    player_url_qr_svg = render_player_url_qr_code(config[:ip], config[:port])
+    player_url_qr_svg = render_player_url_qr_code(config[:ip], config[:port], assigns.room_code)
 
     assigns =
       assigns
@@ -277,9 +276,9 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
     "WIFI:S:#{wifi_ssid};T:WPA;P:#{wifi_psk};;" |> render_qr_code()
   end
 
-  @spec render_player_url_qr_code(String.t(), String.t()) :: Phoenix.HTML.safe()
-  defp render_player_url_qr_code(ip, port) do
-    "http://#{ip}:#{port}" |> render_qr_code()
+  @spec render_player_url_qr_code(String.t(), String.t(), String.t()) :: Phoenix.HTML.safe()
+  defp render_player_url_qr_code(ip, port, room_code) do
+    "http://#{ip}:#{port}/player?room_code=#{room_code}" |> render_qr_code()
   end
 
   @spec render_qr_code(String.t()) :: Phoenix.HTML.safe()
