@@ -5,21 +5,14 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
 
   attr :teams, :map, required: true
   attr :room_code, :string, required: true
+  attr :wifi_ssid, :string, required: true
+  attr :wifi_psk, :string, required: true
+  attr :ip, :string, required: true
+  attr :port, :string, required: true
+  attr :wifi_qr_svg, :string, required: true
+  attr :player_url_qr_svg, :string, required: true
 
   def before_game_view(assigns) do
-    config = Application.fetch_env!(:robo_soccer_platform, RoboSoccerPlatformWeb.GameDashboard)
-
-    wifi_qr_svg = render_wifi_qr_code(config[:wifi_ssid], config[:wifi_psk])
-    player_url_qr_svg = render_player_url_qr_code(config[:ip], config[:port], assigns.room_code)
-
-    assigns =
-      assigns
-      |> assign(
-        Application.fetch_env!(:robo_soccer_platform, RoboSoccerPlatformWeb.GameDashboard)
-      )
-      |> assign(wifi_qr_svg: wifi_qr_svg)
-      |> assign(player_url_qr_svg: player_url_qr_svg)
-
     ~H"""
     <div class="flex justify-evenly items-center col-span-2 ">
       <div class="flex flex-col items-center gap-4">
@@ -52,6 +45,12 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
   attr :game_state, :atom, required: true
   attr :seconds_left, :integer, required: true
   attr :room_code, :string, required: true
+  attr :wifi_ssid, :string, required: true
+  attr :wifi_psk, :string, required: true
+  attr :ip, :string, required: true
+  attr :port, :string, required: true
+  attr :wifi_qr_svg, :string, required: true
+  attr :player_url_qr_svg, :string, required: true
 
   def in_game_view(assigns) do
     green_direction = Utils.point_to_direction(assigns.teams["green"].robot_instruction)
@@ -85,12 +84,12 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
             <div class="flex text-center gap-16">
               <div class="flex flex-col items-center gap-4">
                 <div class="text-7xl">WiFi</div>
-                <img src="images/qr_wifi.png" class="w-[260px]" />
+                <%= @wifi_qr_svg %>
                 <div class="text-xl">nazwa: <%= @wifi_ssid %> | hasło: <%= @wifi_psk %></div>
               </div>
               <div class="flex flex-col items-center gap-4">
                 <div class="text-7xl">Strona</div>
-                <img src="images/qr_player_link.png" class="w-[260px]" />
+                <%= @player_url_qr_svg %>
                 <div class="text-xl">http://<%= @ip %>:<%= @port %></div>
               </div>
             </div>
@@ -269,25 +268,5 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
     number
     |> Integer.to_string()
     |> String.pad_leading(2, "0")
-  end
-
-  @spec render_wifi_qr_code(String.t(), String.t()) :: Phoenix.HTML.safe()
-  defp render_wifi_qr_code(wifi_ssid, wifi_psk) do
-    "WIFI:S:#{wifi_ssid};T:WPA;P:#{wifi_psk};;" |> render_qr_code()
-  end
-
-  @spec render_player_url_qr_code(String.t(), String.t(), String.t()) :: Phoenix.HTML.safe()
-  defp render_player_url_qr_code(ip, port, room_code) do
-    "http://#{ip}:#{port}/player?room_code=#{room_code}" |> render_qr_code()
-  end
-
-  @spec render_qr_code(String.t()) :: Phoenix.HTML.safe()
-  defp render_qr_code(string) do
-    {:ok, qr} =
-      string
-      |> QRCode.create()
-      |> QRCode.render()
-
-    Phoenix.HTML.raw(qr)
   end
 end
