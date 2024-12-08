@@ -38,8 +38,16 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
     {room_code, steering_state, game_state} =
       RoboSoccerPlatform.GameController.init_game_dashboard(self())
 
+    config = Application.fetch_env!(:robo_soccer_platform, RoboSoccerPlatformWeb.GameDashboard)
+
+    wifi_qr_svg = render_wifi_qr_code(config[:wifi_ssid], config[:wifi_psk])
+    player_url_qr_svg = render_player_url_qr_code(config[:ip], config[:port], room_code)
+
     socket
+    |> assign(config)
     |> assign(room_code: room_code)
+    |> assign(wifi_qr_svg: wifi_qr_svg)
+    |> assign(player_url_qr_svg: player_url_qr_svg)
     |> assign(teams: init_teams(steering_state))
     |> assign(game_state: game_state)
     |> assign(seconds_left: 10 * 60)
@@ -50,7 +58,17 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
   def render(assigns) do
     ~H"""
     <div class="flex flex-col h-[80vh] gap-8">
-      <.before_game_view :if={@game_state == :lobby} teams={@teams} room_code={@room_code} />
+      <.before_game_view
+        :if={@game_state == :lobby}
+        teams={@teams}
+        room_code={@room_code}
+        wifi_ssid={@wifi_ssid}
+        wifi_psk={@wifi_psk}
+        ip={@ip}
+        port={@port}
+        wifi_qr_svg={@wifi_qr_svg}
+        player_url_qr_svg={@player_url_qr_svg}
+      />
 
       <.in_game_view
         :if={@game_state != :lobby}
@@ -58,6 +76,12 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
         game_state={@game_state}
         seconds_left={@seconds_left}
         room_code={@room_code}
+        wifi_ssid={@wifi_ssid}
+        wifi_psk={@wifi_psk}
+        ip={@ip}
+        port={@port}
+        wifi_qr_svg={@wifi_qr_svg}
+        player_url_qr_svg={@player_url_qr_svg}
       />
     </div>
     """
@@ -154,6 +178,26 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
   def handle_info(message, socket) do
     Logger.warning("[#{inspect(__MODULE__)}] Ignoring message: #{inspect(message)}")
     {:noreply, socket}
+  end
+
+  @spec render_wifi_qr_code(String.t(), String.t()) :: Phoenix.HTML.safe()
+  defp render_wifi_qr_code(wifi_ssid, wifi_psk) do
+    "WIFI:S:#{wifi_ssid};T:WPA;P:#{wifi_psk};;" |> render_qr_code()
+  end
+
+  @spec render_player_url_qr_code(String.t(), String.t(), String.t()) :: Phoenix.HTML.safe()
+  defp render_player_url_qr_code(ip, port, room_code) do
+    "http://#{ip}:#{port}/player?room_code=#{room_code}" |> render_qr_code()
+  end
+
+  @spec render_qr_code(String.t()) :: Phoenix.HTML.safe()
+  defp render_qr_code(string) do
+    {:ok, qr} =
+      string
+      |> QRCode.create()
+      |> QRCode.render()
+
+    Phoenix.HTML.raw(qr)
   end
 
   @spec init_teams(steering_state()) :: teams()
