@@ -34,7 +34,6 @@ defmodule RoboSoccerPlatformWeb.Player do
             name="room_code"
             value={@room_code}
             label="Kod Pokoju"
-            errors={@form["errors"]}
             label_class="text-center"
           />
         </div>
