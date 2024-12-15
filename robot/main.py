@@ -57,6 +57,7 @@ class Robot:
                 logger.error(f"Caught Exception: {e}, ignoring")
 
     def establish_connection(self) -> None:
+        self.throttle_motor.throttle = 0.0
         timeout = 2
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         while True:
