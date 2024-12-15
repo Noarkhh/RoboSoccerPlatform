@@ -27,7 +27,13 @@ let Hooks = {};
 
 Hooks.JoyStick = {
   mounted() {
-    const joy = new JoyStick(this.el.id)
+    const joy = new JoyStick(
+      this.el.id, 
+      {
+        internalFillColor: this.el.dataset.inner_joystick_color,
+        internalStrokeColor: this.el.dataset.outer_joystick_color
+      }
+    )
     const view = this;
 
     let intervalId;

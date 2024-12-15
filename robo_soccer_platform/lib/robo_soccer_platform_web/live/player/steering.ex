@@ -40,13 +40,33 @@ defmodule RoboSoccerPlatformWeb.Player.Steering do
 
   @impl true
   def render(assigns) do
+    {inner_joystick_color, outer_joystick_color, team_display} = case assigns.player.team do
+      "green" -> {"#00FF1A", "#008A0E", "Drużyna Zielona"}
+      "red" -> {"#FF3737", "#C40000", "Drużyna Czerwona"}
+    end
+
+    assigns =
+      assigns
+      |> assign(inner_joystick_color: inner_joystick_color)
+      |> assign(outer_joystick_color: outer_joystick_color)
+      |> assign(team_display: team_display)
+
     ~H"""
-    <div id="container" phx-hook="Storage">
+    <div class="text-3xl text-center">
+      <%= @team_display %>
+    </div>
+    <div class="text-3xl text-center">
+      <%= @player.username %>
+    </div>
+
+    <div id="container">
       <div
         id="joystick"
         phx-hook="JoyStick"
         phx-update="ignore"
-        class="fixed w-[min(70vw,70vh)] h-[min(70vw,70vh)] left-0 top-0 right-0 bottom-0 m-auto"
+        data-inner_joystick_color={@inner_joystick_color}
+        data-outer_joystick_color={@outer_joystick_color}
+        class={"fixed w-[min(70vw,70vh)] h-[min(70vw,70vh)] left-0 top-0 right-0 bottom-0 m-auto"}
       >
         <!-- joystick will be rendered here -->
       </div>
