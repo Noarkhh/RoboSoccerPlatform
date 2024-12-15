@@ -153,10 +153,17 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
   attr :container_class, :string, default: ""
 
   defp team(assigns) do
+    players_number_display = case length(assigns.players) do
+      1 -> "1 gracz"
+      number_of_players -> "#{number_of_players} graczy"
+    end
+
+    assigns = assign(assigns, players_number_display: players_number_display)
+
     ~H"""
     <div class="flex flex-col flex-1 min-w-0">
       <div class={"text-center #{@class} bg-light-orange p-2"}>
-        Drużyna <%= if @color == :red, do: "czerwona", else: "zielona" %>
+        Drużyna <%= if @color == :red, do: "czerwona", else: "zielona" %> (<%= @players_number_display %>)
       </div>
       <div class={"flex flex-1 flex-col px-8 py-8 gap-2 #{@container_class}"}>
         <div :for={player <- @players} class="flex bg-sky-blue gap-4">
