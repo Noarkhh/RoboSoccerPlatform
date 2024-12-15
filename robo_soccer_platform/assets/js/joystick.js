@@ -43,7 +43,7 @@
   *  internalLineWidth {Int} (optional) - Border width of Stick (Default value is 2)
   *  internalStrokeColor {String}(optional) - Border color of Stick (Default value is '#003300')
   *  externalLineWidth {Int} (optional) - External reference circonference width (Default value is 2)
-  *  externalStrokeColor {String} (optional) - External reference circonference color (Default value is '#008000')
+  *  externalStrokeColor {String} (optional) - External reference circonference color (Default value is '#000000')
   *  autoReturnToCenter {Bool} (optional) - Sets the behavior of the stick, whether or not, it should return to zero position when released (Default value is True and return to zero)
   * @param callback {StickStatus} - 
   */
@@ -57,7 +57,7 @@
          internalLineWidth = (typeof parameters.internalLineWidth === "undefined" ? 2 : parameters.internalLineWidth),
          internalStrokeColor = (typeof parameters.internalStrokeColor === "undefined" ? "#003300" : parameters.internalStrokeColor),
          externalLineWidth = (typeof parameters.externalLineWidth === "undefined" ? 2 : parameters.externalLineWidth),
-         externalStrokeColor = (typeof parameters.externalStrokeColor ===  "undefined" ? "#008000" : parameters.externalStrokeColor),
+         externalStrokeColor = (typeof parameters.externalStrokeColor ===  "undefined" ? "#000000" : parameters.externalStrokeColor),
          autoReturnToCenter = (typeof parameters.autoReturnToCenter === "undefined" ? true : parameters.autoReturnToCenter);
  
      callback = callback || function(StickStatus) {};
