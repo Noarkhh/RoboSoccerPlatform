@@ -67,6 +67,7 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
           <.teams
             red_players={@teams["red"].player_inputs}
             green_players={@teams["green"].player_inputs}
+            game_stopped?={@game_state == :stopped}
           />
         </div>
 
@@ -127,6 +128,7 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
 
   attr :red_players, :list, required: true
   attr :green_players, :list, required: true
+  attr :game_stopped?, :boolean, default: false
 
   defp teams(assigns) do
     ~H"""
@@ -136,12 +138,14 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
         color={:red}
         class="rounded-tl-3xl"
         container_class="rounded-bl-3xl bg-light-red"
+        game_stopped?={@game_stopped?}
       />
       <.team
         players={@green_players}
         color={:green}
         class="rounded-tr-3xl"
         container_class="rounded-br-3xl bg-light-green"
+        game_stopped?={@game_stopped?}
       />
     </div>
     """
@@ -149,6 +153,7 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
 
   attr :players, :list, required: true
   attr :color, :atom, required: true
+  attr :game_stopped?, :boolean, required: true
   attr :class, :string, default: ""
   attr :container_class, :string, default: ""
 
@@ -167,7 +172,7 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
       </div>
       <div class={"flex flex-1 flex-col px-8 py-8 gap-2 #{@container_class}"}>
         <div :for={player <- @players} class="flex bg-sky-blue gap-4">
-          <.player player={player} />
+          <.player player={player} game_stopped?={@game_stopped?}/>
         </div>
       </div>
     </div>
@@ -175,11 +180,16 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
   end
 
   attr :player, :map, required: true
+  attr :game_stopped?, :boolean, required: true
 
   defp player(assigns) do
-    direction = Utils.point_to_direction(%{x: assigns.player.x, y: assigns.player.y})
+    direction_icon = if assigns.game_stopped? do
+      "pan_tool"
+    else
+      Utils.point_to_direction(%{x: assigns.player.x, y: assigns.player.y})
+    end
 
-    assigns = assign(assigns, direction: direction)
+    assigns = assign(assigns, direction_icon: direction_icon)
 
     ~H"""
     <div class="flex-1 truncate">
@@ -189,7 +199,7 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
     </div>
 
     <span class="material-icons-outlined">
-      <%= @direction %>
+      <%= @direction_icon %>
     </span>
     """
   end
