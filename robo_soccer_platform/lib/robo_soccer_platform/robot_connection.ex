@@ -55,21 +55,11 @@ defmodule RoboSoccerPlatform.RobotConnection do
     {:ok, connected_socket} = :gen_tcp.accept(state.listening_socket)
     {:ok, {peer_ip_address, _peer_port}} = :inet.peername(connected_socket)
 
-    if peer_ip_address != state.robot_ip_address do
-      :gen_tcp.close(connected_socket)
+    Logger.info(
+      "Connection with #{state.team} robot established (robot address: #{:inet.ntoa(peer_ip_address)})"
+    )
 
-      Logger.warning(
-        "Unrecognized connection attempt from address #{:inet.ntoa(peer_ip_address)}"
-      )
-
-      {:noreply, state, {:continue, :initialize_connection}}
-    else
-      Logger.info(
-        "Connection with #{state.team} robot established (robot address: #{:inet.ntoa(peer_ip_address)})"
-      )
-
-      {:noreply, %State{state | socket: connected_socket}}
-    end
+    {:noreply, %State{state | socket: connected_socket}}
   end
 
   @impl true
