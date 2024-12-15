@@ -275,8 +275,6 @@ defmodule RoboSoccerPlatform.GameController do
     robot_instructions =
       Map.new(robot_connections, fn {team, _robot_connection} -> {team, %{x: 0.0, y: 0.0}} end)
 
-    IO.inspect(RoboSoccerPlatform.AggregationFunctions.__info__(:functions))
-
     aggregation_function =
       if {aggregation_function_name, 1} in RoboSoccerPlatform.AggregationFunctions.__info__(
            :functions
