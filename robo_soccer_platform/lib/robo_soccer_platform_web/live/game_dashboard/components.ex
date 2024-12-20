@@ -170,9 +170,11 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
       <div class={"text-center #{@class} bg-light-orange p-2"}>
         Drużyna <%= if @color == :red, do: "czerwona", else: "zielona" %> (<%= @players_number_display %>)
       </div>
-      <div class={"flex flex-1 flex-col px-8 py-8 gap-2 #{@container_class}"}>
-        <div :for={player <- @players} class="flex bg-sky-blue gap-4">
-          <.player player={player} game_stopped?={@game_stopped?}/>
+      <div class={"flex flex-col px-8 py-8 #{@container_class}"}>
+        <div class={"flex flex-col grow-0 shrink-0 basis-52 gap-2 #{@container_class} overflow-auto"}>
+          <div :for={player <- @players} class="flex bg-sky-blue gap-4">
+            <.player player={player} game_stopped?={@game_stopped?}/>
+          </div>
         </div>
       </div>
     </div>
