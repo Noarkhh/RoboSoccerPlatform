@@ -13,7 +13,7 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
           player_inputs: %{
             (player_id :: String.t()) => RoboSoccerPlatform.GameController.player_input()
           },
-          robot_instructions: %{RoboSoccerPlatform.team() => %{x: float(), y: float()}}
+          robot_instructions: %{RoboSoccerPlatform.team() => %{x: float(), y: float(), current_compliance_metric: float()}}
         }
   @type teams :: %{
           RoboSoccerPlatform.team() => %{

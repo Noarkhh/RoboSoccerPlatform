@@ -29,7 +29,10 @@ defmodule RoboSoccerPlatform.GameController do
             aggregation_interval_ms: pos_integer(),
             aggregation_function: ([float()] -> float()),
             robot_connections: %{RoboSoccerPlatform.team() => pid()},
-            robot_instructions: %{RoboSoccerPlatform.team() => %{x: float(), y: float()}},
+            robot_instructions: %{RoboSoccerPlatform.team() => %{
+              x: float(), y: float(), current_compliance_metric: float()
+            }},
+            total_compliance_metrics: %{RoboSoccerPlatform.team() => float()},
             player_inputs: %{(player_id :: String.t()) => GameController.player_input()},
             player_pids: %{pid() => player_id :: String.t()},
             game_state: GameController.game_state(),
@@ -48,6 +51,7 @@ defmodule RoboSoccerPlatform.GameController do
     defstruct @enforce_keys ++
                 [
                   robot_instructions: %{},
+                  total_compliance_metrics: %{},
                   player_inputs: %{},
                   player_pids: %{},
                   game_state: :lobby,
@@ -222,22 +226,47 @@ defmodule RoboSoccerPlatform.GameController do
     robot_instructions =
       state.robot_connections
       |> Map.new(fn {team, robot_connection} ->
-        instruction =
+        team_player_inputs =
           state.player_inputs
           |> Map.values()
           |> Enum.filter(&(&1.player.team == team))
+
+        %{x: aggregated_x, y: aggregated_y} =
+          team_player_inputs
           |> aggregate_player_inputs(
             state.aggregation_function,
             state.speed_coefficient
           )
 
-        RobotConnection.send_instruction(robot_connection, instruction)
-        {team, instruction}
+        current_compliance_metric =
+          team_player_inputs
+          |> calculate_compliance_metric(
+            aggregated_x,
+            aggregated_y / state.speed_coefficient
+          )
+
+        RobotConnection.send_instruction(robot_connection, %{x: aggregated_x, y: aggregated_y})
+        {
+          team,
+          %{
+            x: aggregated_x,
+            y: aggregated_y,
+            current_compliance_metric: current_compliance_metric
+          }
+        }
       end)
+
+    total_compliance_metrics =
+      Map.merge(robot_instructions, state.total_compliance_metrics,
+      fn _k, %{current_compliance_metric: current_compliance_metric}, total_compliance_metric ->
+        total_compliance_metric + current_compliance_metric
+      end
+    )
 
     state = %{
       state
       | robot_instructions: robot_instructions,
+        total_compliance_metrics: total_compliance_metrics,
         aggregation_timer: start_aggregation_timer(state.aggregation_interval_ms)
     }
 
@@ -285,10 +314,16 @@ defmodule RoboSoccerPlatform.GameController do
       end)
 
     robot_instructions =
-      Map.new(robot_connections, fn {team, _robot_connection} -> {team, %{x: 0.0, y: 0.0}} end)
+      Map.new(robot_connections, fn {team, _robot_connection} ->
+        {team, %{x: 0.0, y: 0.0, current_compliance_metric: 0.0}}
+      end)
+
+    total_compliance_metrics =
+      Map.new(robot_connections, fn {team, _robot_connection} -> {team, 0.0} end)
 
     %State{
       robot_instructions: robot_instructions,
+      total_compliance_metrics: total_compliance_metrics,
       robot_connections: robot_connections,
       aggregation_interval_ms: aggregation_interval_ms,
       speed_coefficient: speed_coefficient,
@@ -310,6 +345,17 @@ defmodule RoboSoccerPlatform.GameController do
         |> then(aggregation_function)
         |> Kernel.*(speed_coefficient)
     }
+  end
+
+  @spec calculate_compliance_metric([player_input()], float(), float()) :: float()
+  defp calculate_compliance_metric([], _, _), do: 0.0
+
+  defp calculate_compliance_metric(player_inputs, aggregated_x, aggregated_y) do
+    player_inputs
+    |> Enum.reduce(0.0, fn %{x: x, y: y}, acc ->
+      acc + :math.sqrt(:math.pow(x - aggregated_x, 2) + :math.pow(y - aggregated_y, 2))
+    end)
+    |> Kernel./(length(player_inputs))
   end
 
   @spec update_dashboard_steering_state(State.t()) :: :ok
