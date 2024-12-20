@@ -171,7 +171,7 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
         Drużyna <%= if @color == :red, do: "czerwona", else: "zielona" %> (<%= @players_number_display %>)
       </div>
       <div class={"flex flex-col px-8 py-8 #{@container_class}"}>
-        <div class={"flex flex-col grow-0 shrink-0 basis-52 gap-2 #{@container_class} overflow-auto"}>
+        <div class={"flex flex-col grow-0 shrink-0 basis-96 gap-2 #{@container_class} overflow-auto"}>
           <div :for={player <- @players} class="flex bg-sky-blue gap-4">
             <.player player={player} game_stopped?={@game_stopped?}/>
           </div>
