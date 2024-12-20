@@ -49,12 +49,17 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
 
   def in_game_view(assigns) do
     green_direction = Utils.point_to_direction(assigns.teams["green"].robot_instruction)
+    green_compliance_metric = assigns.teams["green"].robot_instruction.current_compliance_metric
+
     red_direction = Utils.point_to_direction(assigns.teams["red"].robot_instruction)
+    red_compliance_metric = assigns.teams["red"].robot_instruction.current_compliance_metric
 
     assigns =
       assigns
       |> assign(green_direction: green_direction)
+      |> assign(green_compliance_metric: green_compliance_metric)
       |> assign(red_direction: red_direction)
+      |> assign(red_compliance_metric: red_compliance_metric)
       |> assign(wifi_ssid: System.fetch_env!("WIFI_SSID"))
       |> assign(wifi_psk: System.fetch_env!("WIFI_PSK"))
       |> assign(ip: System.fetch_env!("SERVER_IP"))
@@ -94,6 +99,7 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
           <.time_left seconds={@seconds_left} />
           <.score red_goals={@teams["red"].goals} green_goals={@teams["green"].goals} />
           <.directions red_direction={@red_direction} green_direction={@green_direction} />
+          <.compliance_metrics red_compliance_metric={@red_compliance_metric} green_compliance_metric={@green_compliance_metric} />
         </div>
       </div>
     </div>
@@ -250,6 +256,34 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
           <span class="material-icons-outlined">
             <%= @green_direction %>
           </span>
+        </div>
+
+        <div class="flex-1 bg-green-500 p-4"></div>
+      </div>
+    </div>
+    """
+  end
+
+  attr :red_compliance_metric, :string, required: true
+  attr :green_compliance_metric, :string, required: true
+
+  defp compliance_metrics(assigns) do
+    assigns =
+      assigns
+      |> assign(red_compliance_metric: pad_to_two_digits(assigns.red_compliance_metric))
+      |> assign(green_compliance_metric: pad_to_two_digits(assigns.green_compliance_metric))
+
+    ~H"""
+    <div class="bg-white px-4 py-2 text-3xl border border-solid border-black">
+      <div class="flex min-w-0">
+        <div class="flex-1 bg-red-500 p-4"></div>
+
+        <div class="flex-1 p-4 flex items-center justify-center text-3xl whitespace-nowrap">
+          <%= @red_compliance_metric %>
+        </div>
+
+        <div class="flex-1 p-4 flex items-center justify-center text-3xl whitespace-nowrap">
+          <%= @green_compliance_metric %>
         </div>
 
         <div class="flex-1 bg-green-500 p-4"></div>
