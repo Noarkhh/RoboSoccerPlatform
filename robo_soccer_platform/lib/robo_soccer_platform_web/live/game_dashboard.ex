@@ -186,7 +186,7 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
     wifi_string = "WIFI:S:#{wifi_ssid};T:WPA;P:#{wifi_psk};;"
 
     if String.length(wifi_string) > 53 do
-      Logger.warning("Please wifi name + password shorter than 36 for nicer qr code rendering")
+      Logger.warning("Please use wifi name + password shorter than 36 for nicer qr code rendering")
     end
 
     wifi_string |> String.pad_trailing(33) |> render_qr_code()
