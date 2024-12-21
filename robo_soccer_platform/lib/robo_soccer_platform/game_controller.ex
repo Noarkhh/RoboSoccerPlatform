@@ -166,7 +166,7 @@ defmodule RoboSoccerPlatform.GameController do
       state.robot_connections
       |> Map.new(fn {team, robot_connection} ->
         RobotConnection.send_instruction(robot_connection, %{x: 0.0, y: 0.0})
-        {team, %{x: 0.0, y: 0.0}}
+        {team, %{x: 0.0, y: 0.0, current_compliance_metric: 0.0}}
       end)
 
     if state.aggregation_timer, do: Process.cancel_timer(state.aggregation_timer)

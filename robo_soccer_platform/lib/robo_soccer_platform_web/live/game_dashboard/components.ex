@@ -270,8 +270,8 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
   defp compliance_metrics(assigns) do
     assigns =
       assigns
-      |> assign(red_compliance_metric: pad_to_two_digits(assigns.red_compliance_metric))
-      |> assign(green_compliance_metric: pad_to_two_digits(assigns.green_compliance_metric))
+      |> assign(red_compliance_metric: Float.round(assigns.red_compliance_metric, 2))
+      |> assign(green_compliance_metric: Float.round(assigns.green_compliance_metric, 2))
 
     ~H"""
     <div class="bg-white px-4 py-2 text-3xl border border-solid border-black">
