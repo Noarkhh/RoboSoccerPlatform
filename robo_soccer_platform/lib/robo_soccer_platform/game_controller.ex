@@ -69,6 +69,11 @@ defmodule RoboSoccerPlatform.GameController do
     GenServer.call(:game_controller, :get_game_state)
   end
 
+  @spec get_total_compliance_metrics() :: float()
+  def get_total_compliance_metrics() do
+    GenServer.call(:game_controller, :get_total_compliance_metrics)
+  end
+
   @spec room_code_correct?(String.t()) :: boolean()
   def room_code_correct?(room_code) do
     GenServer.call(:game_controller, {:room_code_correct?, room_code})
@@ -106,6 +111,11 @@ defmodule RoboSoccerPlatform.GameController do
   @impl true
   def handle_call(:get_game_state, _from, state) do
     {:reply, state.game_state, state}
+  end
+
+  @impl true
+  def handle_call(:get_total_compliance_metrics, _from, state) do
+    {:reply, state.total_compliance_metrics, state}
   end
 
   @impl true
