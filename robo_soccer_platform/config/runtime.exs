@@ -22,6 +22,10 @@ config :robo_soccer_platform, RoboSoccerPlatform.GameController,
     System.get_env("AGGREGATION_FUNCTION_NAME", "AVERAGE")
     |> String.downcase()
     |> String.to_atom(),
+  cooperation_metric_function_name:
+    System.get_env("COOPERATION_METRIC_FUNCTION_NAME", "EUCLIDEAN_DISTANCE")
+    |> String.downcase()
+    |> String.to_atom(),
   speed_coefficient: System.get_env("SPEED_COEFFICIENT", "0.5") |> String.to_float(),
   robot_configs: %{
     "red" => %{
