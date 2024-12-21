@@ -38,11 +38,20 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
     {room_code, steering_state, game_state} =
       RoboSoccerPlatform.GameController.init_game_dashboard(self())
 
+    config = Application.fetch_env!(:robo_soccer_platform, RoboSoccerPlatformWeb.GameDashboard)
+
+    wifi_qr_svg = render_wifi_qr_code(config[:wifi_ssid], config[:wifi_psk])
+    player_url_qr_svg = render_player_url_qr_code(config[:ip], config[:port], room_code)
+
     socket
+    |> assign(config)
     |> assign(room_code: room_code)
+    |> assign(wifi_qr_svg: wifi_qr_svg)
+    |> assign(player_url_qr_svg: player_url_qr_svg)
     |> assign(teams: init_teams(steering_state))
     |> assign(game_state: game_state)
     |> assign(seconds_left: 10 * 60)
+    |> assign(timer: nil)
     |> then(&{:ok, &1})
   end
 
@@ -50,7 +59,17 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
   def render(assigns) do
     ~H"""
     <div class="flex flex-col h-[80vh] gap-8">
-      <.before_game_view :if={@game_state == :lobby} teams={@teams} room_code={@room_code} />
+      <.before_game_view
+        :if={@game_state == :lobby}
+        teams={@teams}
+        room_code={@room_code}
+        wifi_ssid={@wifi_ssid}
+        wifi_psk={@wifi_psk}
+        ip={@ip}
+        port={@port}
+        wifi_qr_svg={@wifi_qr_svg}
+        player_url_qr_svg={@player_url_qr_svg}
+      />
 
       <.in_game_view
         :if={@game_state != :lobby}
@@ -58,6 +77,12 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
         game_state={@game_state}
         seconds_left={@seconds_left}
         room_code={@room_code}
+        wifi_ssid={@wifi_ssid}
+        wifi_psk={@wifi_psk}
+        ip={@ip}
+        port={@port}
+        wifi_qr_svg={@wifi_qr_svg}
+        player_url_qr_svg={@player_url_qr_svg}
       />
     </div>
     """
@@ -81,19 +106,20 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
   def handle_event("start_game", _params, socket) do
     Endpoint.broadcast_from(self(), @game_state, "start_game", nil)
 
-    Process.send_after(self(), :tick, 1000)
-
     socket
     |> assign(game_state: :started)
+    |> assign(timer: Process.send_after(self(), :tick, 1000))
     |> then(&{:noreply, &1})
   end
 
   @impl true
   def handle_event("stop_game", _params, socket) do
     Endpoint.broadcast_from(self(), @game_state, "stop_game", nil)
+    Process.cancel_timer(socket.assigns.timer)
 
     socket
     |> assign(game_state: :stopped)
+    |> assign(timer: nil)
     |> then(&{:noreply, &1})
   end
 
@@ -135,10 +161,9 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
     seconds_left = socket.assigns.seconds_left - 1
 
     if seconds_left > 0 do
-      Process.send_after(self(), :tick, 1000)
-
       socket
       |> assign(seconds_left: seconds_left)
+      |> assign(timer: Process.send_after(self(), :tick, 1000))
       |> then(&{:noreply, &1})
     else
       Endpoint.broadcast_from(self(), @game_state, "stop_game", nil)
@@ -154,6 +179,33 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
   def handle_info(message, socket) do
     Logger.warning("[#{inspect(__MODULE__)}] Ignoring message: #{inspect(message)}")
     {:noreply, socket}
+  end
+
+  @spec render_wifi_qr_code(String.t(), String.t()) :: Phoenix.HTML.safe()
+  defp render_wifi_qr_code(wifi_ssid, wifi_psk) do
+    # Add padding so that the qr codes are the same size (between 33 and 53 character strings they are are 29x29)
+    wifi_string = "WIFI:S:#{wifi_ssid};T:WPA;P:#{wifi_psk};;"
+
+    if String.length(wifi_string) > 53 do
+      Logger.warning("Please use wifi name + password shorter than 36 for nicer qr code rendering")
+    end
+
+    wifi_string |> String.pad_trailing(33) |> render_qr_code()
+  end
+
+  @spec render_player_url_qr_code(String.t(), String.t(), String.t()) :: Phoenix.HTML.safe()
+  defp render_player_url_qr_code(ip, port, room_code) do
+    "http://#{ip}:#{port}/player?room_code=#{room_code}" |> render_qr_code()
+  end
+
+  @spec render_qr_code(String.t()) :: Phoenix.HTML.safe()
+  defp render_qr_code(string) do
+    {:ok, qr} =
+      string
+      |> QRCode.create()
+      |> QRCode.render()
+
+    Phoenix.HTML.raw(qr)
   end
 
   @spec init_teams(steering_state()) :: teams()

@@ -3,17 +3,12 @@ defmodule RoboSoccerPlatform.GameController do
 
   require Logger
   alias Hex.State
-  alias RoboSoccerPlatform.{Player, RobotConnection}
+  alias RoboSoccerPlatform.{AggregationFunctions, Player, RobotConnection}
   alias RoboSoccerPlatformWeb.GameDashboard
 
   @game_state "game_state"
 
-  @default_aggregation_interval_ms 100
-  @default_aggregation_function_name :average
-  @default_compliance_metric_function_name :euclidean_distance
-  @default_speed_coefficient 1.0
-
-  @type robot_config :: %{robot_ip_address: String.t(), local_port: String.t()}
+  @type robot_config :: %{robot_ip_address: :inet.ip_address(), local_port: :inet.port_number()}
   @type option ::
           {:aggregation_interval_ms, pos_integer()}
           | {:aggregation_function_name, atom()}
@@ -29,8 +24,8 @@ defmodule RoboSoccerPlatform.GameController do
 
     @type t :: %__MODULE__{
             aggregation_interval_ms: pos_integer(),
-            aggregation_function: ([float()] -> float()),
-            compliance_metric_function: ([GameController.player_input()], float(), float() -> float()),
+            compliance_metric_function: RoboSoccerPlatform.ComplianceMetricFunctions.signature(),
+            aggregation_function: RoboSoccerPlatform.AggregationFunctions.signature(),
             robot_connections: %{RoboSoccerPlatform.team() => pid()},
             robot_instructions: %{RoboSoccerPlatform.team() => %{
               x: float(), y: float(), current_compliance_metric: float()
@@ -302,25 +297,15 @@ defmodule RoboSoccerPlatform.GameController do
 
   @spec init_state(options()) :: State.t()
   defp init_state(opts) do
-    aggregation_interval_ms =
-      Keyword.get(opts, :aggregation_interval_ms, @default_aggregation_interval_ms)
-
-    aggregation_function_name =
-      Keyword.get(opts, :aggregation_function_name, @default_aggregation_function_name)
-
-    compliance_metric_function_name =
-      Keyword.get(opts, :compliance_metric_function_name, @default_compliance_metric_function_name)
-
-    speed_coefficient =
-      Keyword.get(opts, :speed_coefficient, @default_speed_coefficient)
+    aggregation_interval_ms = opts[:aggregation_interval_ms]
+    aggregation_function_name = opts[:aggregation_function_name]
+    compliance_metric_function_name = opts[:compliance_metric_function_name]
+    speed_coefficient = opts[:speed_coefficient]
 
     robot_connections =
       opts
       |> Keyword.fetch!(:robot_configs)
       |> Map.new(fn {team, %{robot_ip_address: ip_address, local_port: local_port}} ->
-        {:ok, ip_address} = ip_address |> String.to_charlist() |> :inet.parse_address()
-        {local_port, ""} = Integer.parse(local_port)
-
         case RobotConnection.start(team, local_port, ip_address) do
           {:ok, pid} ->
             Logger.info("Started RobotConnection for team #{team} with pid #{inspect(pid)}")
@@ -339,6 +324,24 @@ defmodule RoboSoccerPlatform.GameController do
     total_compliance_metrics =
       Map.new(robot_connections, fn {team, _robot_connection} -> {team, 0.0} end)
 
+    aggregation_function =
+      if {aggregation_function_name, 1} in AggregationFunctions.__info__(
+           :functions
+         ) do
+        Function.capture(AggregationFunctions, aggregation_function_name, 1)
+      else
+        raise "Provided aggregation function not implemented: RoboSoccerPlatform.AggregationFunctions.#{Atom.to_string(aggregation_function_name)}/1"
+      end
+
+    compliance_metric_function =
+      if {compliance_metric_function_name, 3} in RoboSoccerPlatform.ComplianceMetricFunctions.__info__(
+           :functions
+         ) do
+        Function.capture(RoboSoccerPlatform.ComplianceMetricFunctions, compliance_metric_function_name, 3)
+      else
+        raise "Provided compliance metric function not implemented: RoboSoccerPlatform.ComplianceMetricFunctions.#{Atom.to_string(compliance_metric_function_name)}/3"
+      end
+
     %State{
       robot_instructions: robot_instructions,
       total_compliance_metrics: total_compliance_metrics,
@@ -346,14 +349,12 @@ defmodule RoboSoccerPlatform.GameController do
       aggregation_interval_ms: aggregation_interval_ms,
       speed_coefficient: speed_coefficient,
       room_code: generate_room_code(),
-      aggregation_function:
-        Function.capture(RoboSoccerPlatform.AggregationFunctions, aggregation_function_name, 1),
-      compliance_metric_function:
-        Function.capture(RoboSoccerPlatform.ComplianceMetricFunctions, compliance_metric_function_name, 3)
+      aggregation_function: aggregation_function,
+      compliance_metric_function: compliance_metric_function
     }
   end
 
-  @spec aggregate_player_inputs([player_input()], ([integer()] -> float()), float()) ::
+  @spec aggregate_player_inputs([player_input()], AggregationFunctions.signature(), float()) ::
           %{x: float(), y: float()}
   defp aggregate_player_inputs(player_inputs, aggregation_function, speed_coefficient) do
     %{
@@ -367,7 +368,7 @@ defmodule RoboSoccerPlatform.GameController do
     }
   end
 
-  @spec calculate_compliance_metric([player_input()], float(), float(), ([player_input()], float(), float() -> float())) :: float()
+  @spec calculate_compliance_metric([player_input()], float(), float(), RoboSoccerPlatform.ComplianceMetricFunctions.signature()) :: float()
   defp calculate_compliance_metric(player_inputs, aggregated_x, aggregated_y, compliance_metric_function) do
     compliance_metric_function.(player_inputs, aggregated_x, aggregated_y)
   end

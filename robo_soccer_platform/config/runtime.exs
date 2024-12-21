@@ -17,23 +17,42 @@ import Config
 # Alternatively, you can use `mix phx.gen.release` to generate a `bin/server`
 # script that automatically sets the env var above.
 config :robo_soccer_platform, RoboSoccerPlatform.GameController,
-  aggregation_interval_ms: 10,
-  aggregation_function_name: :average,
-  speed_coefficient: 0.5,
+  aggregation_interval_ms: System.get_env("AGGREGATION_INTERVAL_MS", "10") |> String.to_integer(),
+  aggregation_function_name:
+    System.get_env("AGGREGATION_FUNCTION_NAME", "AVERAGE")
+    |> String.downcase()
+    |> String.to_atom(),
+  compliance_metric_function_name:
+    System.get_env("COMPLIANCE_METRIC_FUNCTION_NAME", "EUCLIDEAN_DISTANCE")
+    |> String.downcase()
+    |> String.to_atom(),
+  speed_coefficient: System.get_env("SPEED_COEFFICIENT", "0.5") |> String.to_float(),
   robot_configs: %{
     "red" => %{
-      robot_ip_address: System.fetch_env!("RED_ROBOT_IP"),
-      local_port: System.fetch_env!("RED_ROBOT_SERVER_PORT")
+      robot_ip_address:
+        System.fetch_env!("RED_ROBOT_IP") |> RoboSoccerPlatform.ConfigUtils.parse_ip_address!(),
+      local_port: System.fetch_env!("RED_ROBOT_SERVER_PORT") |> String.to_integer()
     },
     "green" => %{
-      robot_ip_address: System.fetch_env!("GREEN_ROBOT_IP"),
-      local_port: System.fetch_env!("GREEN_ROBOT_SERVER_PORT")
+      robot_ip_address:
+        System.fetch_env!("GREEN_ROBOT_IP") |> RoboSoccerPlatform.ConfigUtils.parse_ip_address!(),
+      local_port: System.fetch_env!("GREEN_ROBOT_SERVER_PORT") |> String.to_integer()
     }
   }
+
+config :robo_soccer_platform, RoboSoccerPlatformWeb.GameDashboard,
+  wifi_ssid: System.fetch_env!("WIFI_SSID"),
+  wifi_psk: System.fetch_env!("WIFI_PSK"),
+  ip: System.fetch_env!("SERVER_IP"),
+  port: System.get_env("PHX_PORT", "4000")
 
 if System.get_env("PHX_SERVER") do
   config :robo_soccer_platform, RoboSoccerPlatformWeb.Endpoint, server: true
 end
+
+config :robo_soccer_platform, RoboSoccerPlatformWeb.Router,
+  username: System.fetch_env!("CONTROLLER_USERNAME"),
+  password: System.fetch_env!("CONTROLLER_PASSWORD")
 
 if config_env() == :prod do
   # The secret key base is used to sign/encrypt cookies and other secrets.
@@ -48,12 +67,13 @@ if config_env() == :prod do
       You can generate one by calling: mix phx.gen.secret
       """
 
-  host = System.get_env("PHX_HOST") || "example.com"
+  host = System.get_env("PHX_HOST") || "0.0.0.0"
   port = String.to_integer(System.get_env("PHX_PORT") || "4000")
 
   config :robo_soccer_platform, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
 
   config :robo_soccer_platform, RoboSoccerPlatformWeb.Endpoint,
+    check_origin: false,
     url: [host: host, port: 443, scheme: "https"],
     http: [
       # Enable IPv6 and bind on all interfaces.
@@ -63,7 +83,8 @@ if config_env() == :prod do
       ip: {0, 0, 0, 0, 0, 0, 0, 0},
       port: port
     ],
-    secret_key_base: secret_key_base
+    secret_key_base: secret_key_base,
+    server: true
 
   # ## SSL Support
   #

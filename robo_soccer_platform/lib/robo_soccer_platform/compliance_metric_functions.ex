@@ -1,10 +1,10 @@
 defmodule RoboSoccerPlatform.ComplianceMetricFunctions do
-  alias RoboSoccerPlatform.Player
+  alias RoboSoccerPlatform.GameController
 
-  @type player_input :: %{player: Player.t(), x: float(), y: float()}
+  @type signature :: ([GameController.player_input()], float(), float() -> float())
 
   @doc "returns value from range [0, 1]; 0 - best compliance, 1 - worst compliance"
-  @spec euclidean_distance([player_input()], float(), float()) :: float()
+  @spec euclidean_distance([GameController.player_input()], float(), float()) :: float()
   def euclidean_distance([], _, _), do: 0.0
   def euclidean_distance([_player_input], _, _), do: 0.0
   def euclidean_distance(player_inputs, aggregated_x, aggregated_y) do

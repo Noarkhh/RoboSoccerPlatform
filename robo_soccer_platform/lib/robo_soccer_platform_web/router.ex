@@ -55,8 +55,9 @@ defmodule RoboSoccerPlatformWeb.Router do
   end
 
   defp auth(conn, _opts) do
-    username = System.fetch_env!("CONTROLLER_USERNAME")
-    password = System.fetch_env!("CONTROLLER_PASSWORD")
-    Plug.BasicAuth.basic_auth(conn, username: username, password: password)
+    Plug.BasicAuth.basic_auth(
+      conn,
+      Application.fetch_env!(:robo_soccer_platform, RoboSoccerPlatformWeb.Router)
+    )
   end
 end
