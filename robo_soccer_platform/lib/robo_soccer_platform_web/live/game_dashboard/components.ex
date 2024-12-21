@@ -110,7 +110,7 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
       </div>
     </div>
 
-    <div class="flex justify-center gap-32">
+    <div class="flex justify-center gap-16">
       <.button
         phx-click={if @game_state == :started, do: "stop_game", else: "start_game"}
         class="bg-white !text-black !text-4xl"
@@ -132,6 +132,10 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
 
       <.button phx-click="new_room" class="bg-white !text-black !text-4xl">
         NOWY POKÓJ
+      </.button>
+
+      <.button phx-click="show_stats" class="bg-yellow-500 !text-black !text-4xl">
+        POKAŻ STATYSTYKI
       </.button>
     </div>
     """
@@ -291,7 +295,7 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
   attr :red_compliance_metric, :string, required: true
   attr :green_compliance_metric, :string, required: true
 
-  defp compliance_metrics(assigns) do
+  def compliance_metrics(assigns) do
     assigns =
       assigns
       |> assign(red_compliance_metric: Float.round(assigns.red_compliance_metric, 2))

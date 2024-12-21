@@ -4,7 +4,7 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
   use RoboSoccerPlatformWeb, :live_view
 
   import RoboSoccerPlatformWeb.GameDashboard.Components,
-    only: [before_game_view: 1, in_game_view: 1]
+    only: [before_game_view: 1, in_game_view: 1, compliance_metrics: 1]
 
   alias RoboSoccerPlatformWeb.Endpoint
 
@@ -52,12 +52,21 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
     |> assign(game_state: game_state)
     |> assign(seconds_left: 10 * 60)
     |> assign(timer: nil)
+    |> assign(stats_visible: false)
+    |> assign(total_compliance_metrics: %{"green" => 0.0, "red" => 0.0})
     |> then(&{:ok, &1})
   end
 
   @impl true
   def render(assigns) do
     ~H"""
+    <.modal :if={@stats_visible} id="my-modal" show on_cancel={JS.push("close_stats")}>
+      <div class="flex text-2xl">
+        Łączny poziom rozbieżnych decyzji
+      </div>
+      <.compliance_metrics red_compliance_metric={@total_compliance_metrics["red"]} green_compliance_metric={@total_compliance_metrics["green"]} />
+    </.modal>
+
     <div class="flex flex-col h-[80vh] gap-8">
       <.before_game_view
         :if={@game_state == :lobby}
@@ -150,6 +159,20 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
     socket
     |> assign(game_state: :lobby)
     |> then(&{:noreply, &1})
+  end
+
+  @impl true
+  def handle_event("show_stats", _params, socket) do
+    total_compliance_metrics = RoboSoccerPlatform.GameController.get_total_compliance_metrics()
+
+    socket
+    |> assign(total_compliance_metrics: total_compliance_metrics)
+    |> assign(stats_visible: true)
+    |> then(&{:noreply, &1})
+  end
+
+  def handle_event("close_stats", _params, socket) do
+    {:noreply, assign(socket, :stats_visible, false)}
   end
 
   @impl true
