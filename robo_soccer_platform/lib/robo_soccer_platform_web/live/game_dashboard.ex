@@ -4,7 +4,7 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
   use RoboSoccerPlatformWeb, :live_view
 
   import RoboSoccerPlatformWeb.GameDashboard.Components,
-    only: [before_game_view: 1, in_game_view: 1, compliance_metrics: 1]
+    only: [before_game_view: 1, in_game_view: 1, cooperation_metrics: 1]
 
   alias RoboSoccerPlatformWeb.Endpoint
 
@@ -13,7 +13,7 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
           player_inputs: %{
             (player_id :: String.t()) => RoboSoccerPlatform.GameController.player_input()
           },
-          robot_instructions: %{RoboSoccerPlatform.team() => %{x: float(), y: float(), current_compliance_metric: float()}}
+          robot_instructions: %{RoboSoccerPlatform.team() => %{x: float(), y: float(), current_cooperation_metric: float()}}
         }
   @type teams :: %{
           RoboSoccerPlatform.team() => %{
@@ -53,7 +53,7 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
     |> assign(seconds_left: 10 * 60)
     |> assign(timer: nil)
     |> assign(stats_visible: false)
-    |> assign(total_compliance_metrics: %{"green" => 0.0, "red" => 0.0})
+    |> assign(total_cooperation_metrics: %{"green" => 0.0, "red" => 0.0})
     |> then(&{:ok, &1})
   end
 
@@ -64,7 +64,7 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
       <div class="flex text-2xl">
         Łączny poziom rozbieżnych decyzji
       </div>
-      <.compliance_metrics red_compliance_metric={@total_compliance_metrics["red"]} green_compliance_metric={@total_compliance_metrics["green"]} />
+      <.cooperation_metrics red_cooperation_metric={@total_cooperation_metrics["red"]} green_cooperation_metric={@total_cooperation_metrics["green"]} />
     </.modal>
 
     <div class="flex flex-col h-[80vh] gap-8">
@@ -163,10 +163,10 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
 
   @impl true
   def handle_event("show_stats", _params, socket) do
-    total_compliance_metrics = RoboSoccerPlatform.GameController.get_total_compliance_metrics()
+    total_cooperation_metrics = RoboSoccerPlatform.GameController.get_total_cooperation_metrics()
 
     socket
-    |> assign(total_compliance_metrics: total_compliance_metrics)
+    |> assign(total_cooperation_metrics: total_cooperation_metrics)
     |> assign(stats_visible: true)
     |> then(&{:noreply, &1})
   end

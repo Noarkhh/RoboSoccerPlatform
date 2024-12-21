@@ -54,17 +54,17 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
 
   def in_game_view(assigns) do
     green_direction = Utils.point_to_direction(assigns.teams["green"].robot_instruction)
-    green_compliance_metric = assigns.teams["green"].robot_instruction.current_compliance_metric
+    green_cooperation_metric = assigns.teams["green"].robot_instruction.current_cooperation_metric
 
     red_direction = Utils.point_to_direction(assigns.teams["red"].robot_instruction)
-    red_compliance_metric = assigns.teams["red"].robot_instruction.current_compliance_metric
+    red_cooperation_metric = assigns.teams["red"].robot_instruction.current_cooperation_metric
 
     assigns =
       assigns
       |> assign(green_direction: green_direction)
-      |> assign(green_compliance_metric: green_compliance_metric)
+      |> assign(green_cooperation_metric: green_cooperation_metric)
       |> assign(red_direction: red_direction)
-      |> assign(red_compliance_metric: red_compliance_metric)
+      |> assign(red_cooperation_metric: red_cooperation_metric)
       |> assign(wifi_ssid: System.fetch_env!("WIFI_SSID"))
       |> assign(wifi_psk: System.fetch_env!("WIFI_PSK"))
       |> assign(ip: System.fetch_env!("SERVER_IP"))
@@ -79,7 +79,7 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
         <div class="flex flex-col flex-1 gap-4">
           <.score red_goals={@teams["red"].goals} green_goals={@teams["green"].goals} />
           <.directions red_direction={@red_direction} green_direction={@green_direction} />
-          <.compliance_metrics red_compliance_metric={@red_compliance_metric} green_compliance_metric={@green_compliance_metric} />
+          <.cooperation_metrics red_cooperation_metric={@red_cooperation_metric} green_cooperation_metric={@green_cooperation_metric} />
           <.teams
             red_players={@teams["red"].player_inputs}
             green_players={@teams["green"].player_inputs}
@@ -292,14 +292,14 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
     """
   end
 
-  attr :red_compliance_metric, :string, required: true
-  attr :green_compliance_metric, :string, required: true
+  attr :red_cooperation_metric, :string, required: true
+  attr :green_cooperation_metric, :string, required: true
 
-  def compliance_metrics(assigns) do
+  def cooperation_metrics(assigns) do
     assigns =
       assigns
-      |> assign(red_compliance_metric: Float.round(assigns.red_compliance_metric, 2))
-      |> assign(green_compliance_metric: Float.round(assigns.green_compliance_metric, 2))
+      |> assign(red_cooperation_metric: Float.round(assigns.red_cooperation_metric, 2))
+      |> assign(green_cooperation_metric: Float.round(assigns.green_cooperation_metric, 2))
 
     ~H"""
     <div class="bg-white px-4 py-2 text-3xl border border-solid border-black">
@@ -307,11 +307,11 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
         <div class="flex-1 bg-light-red p-4"></div>
 
         <div class="flex-1 p-4 flex items-center justify-center text-3xl whitespace-nowrap">
-          <%= @red_compliance_metric %>
+          <%= @red_cooperation_metric %>
         </div>
 
         <div class="flex-1 p-4 flex items-center justify-center text-3xl whitespace-nowrap">
-          <%= @green_compliance_metric %>
+          <%= @green_cooperation_metric %>
         </div>
 
         <div class="flex-1 bg-light-green p-4"></div>
