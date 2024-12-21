@@ -71,9 +71,12 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
       |> assign(port: System.get_env("PHX_PORT", "4000"))
 
     ~H"""
-    <div class="flex flex-1">
+    <div class="flex flex-col flex-1 gap-2">
+      <div class="ml-auto">
+        <.time_left seconds={@seconds_left} />
+      </div>
       <div class="grid grid-flow-col auto-cols-fr w-full gap-2">
-        <div class="flex flex-col flex-1 col-span-2 gap-4">
+        <div class="flex flex-col flex-1 gap-4">
           <.score red_goals={@teams["red"].goals} green_goals={@teams["green"].goals} />
           <.directions red_direction={@red_direction} green_direction={@green_direction} />
           <.compliance_metrics red_compliance_metric={@red_compliance_metric} green_compliance_metric={@green_compliance_metric} />
@@ -84,28 +87,25 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
           />
         </div>
 
-        <div class="flex flex-col items-center gap-16 col-span-2">
+        <div class="flex flex-col">
           <div class="flex flex-col items-center text-7xl gap-8">
-            <div class="flex flex-col text-center gap-8">
+            <div class="flex flex-col text-center gap-2">
               <div class="text-5xl">Kod Pokoju</div>
               <div class="text-9xl"><%= @room_code %></div>
             </div>
             <div class="flex text-center gap-16">
               <div class="flex flex-col items-center gap-4">
-                <div class="text-7xl">WiFi</div>
+                <div class="text-5xl">WiFi</div>
                 <%= @wifi_qr_svg %>
                 <div class="text-xl">nazwa: <%= @wifi_ssid %> | hasło: <%= @wifi_psk %></div>
               </div>
               <div class="flex flex-col items-center gap-4">
-                <div class="text-7xl">Strona</div>
+                <div class="text-5xl">Strona</div>
                 <%= @player_url_qr_svg %>
                 <div class="text-xl">http://<%= @ip %>:<%= @port %></div>
               </div>
             </div>
           </div>
-        </div>
-        <div class="flex flex-col flex-1 items-center gap-8">
-          <.time_left seconds={@seconds_left} />
         </div>
       </div>
     </div>
@@ -300,7 +300,7 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
     ~H"""
     <div class="bg-white px-4 py-2 text-3xl border border-solid border-black">
       <div class="flex min-w-0">
-        <div class="flex-1 bg-red-500 p-4"></div>
+        <div class="flex-1 bg-light-red p-4"></div>
 
         <div class="flex-1 p-4 flex items-center justify-center text-3xl whitespace-nowrap">
           <%= @red_compliance_metric %>
@@ -310,7 +310,7 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
           <%= @green_compliance_metric %>
         </div>
 
-        <div class="flex-1 bg-green-500 p-4"></div>
+        <div class="flex-1 bg-light-green p-4"></div>
       </div>
     </div>
     """
