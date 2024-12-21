@@ -10,12 +10,14 @@ defmodule RoboSoccerPlatform.GameController do
 
   @default_aggregation_interval_ms 100
   @default_aggregation_function_name :average
+  @default_compliance_metric_function_name :euclidean_distance
   @default_speed_coefficient 1.0
 
   @type robot_config :: %{robot_ip_address: String.t(), local_port: String.t()}
   @type option ::
           {:aggregation_interval_ms, pos_integer()}
           | {:aggregation_function_name, atom()}
+          | {:compliance_metric_function_name, atom()}
           | {:robot_configs, %{RoboSoccerPlatform.team() => robot_config()}}
           | {:speed_coefficient, float()}
   @type options :: [option()]
@@ -28,6 +30,7 @@ defmodule RoboSoccerPlatform.GameController do
     @type t :: %__MODULE__{
             aggregation_interval_ms: pos_integer(),
             aggregation_function: ([float()] -> float()),
+            compliance_metric_function: ([GameController.player_input()], float(), float() -> float()),
             robot_connections: %{RoboSoccerPlatform.team() => pid()},
             robot_instructions: %{RoboSoccerPlatform.team() => %{
               x: float(), y: float(), current_compliance_metric: float()
@@ -44,6 +47,7 @@ defmodule RoboSoccerPlatform.GameController do
     @enforce_keys [
       :aggregation_interval_ms,
       :aggregation_function,
+      :compliance_metric_function,
       :robot_connections,
       :speed_coefficient,
       :room_code
@@ -242,7 +246,8 @@ defmodule RoboSoccerPlatform.GameController do
           team_player_inputs
           |> calculate_compliance_metric(
             aggregated_x,
-            aggregated_y / state.speed_coefficient
+            aggregated_y / state.speed_coefficient,
+            state.compliance_metric_function
           )
 
         RobotConnection.send_instruction(robot_connection, %{x: aggregated_x, y: aggregated_y})
@@ -293,6 +298,9 @@ defmodule RoboSoccerPlatform.GameController do
     aggregation_function_name =
       Keyword.get(opts, :aggregation_function_name, @default_aggregation_function_name)
 
+    compliance_metric_function_name =
+      Keyword.get(opts, :compliance_metric_function_name, @default_compliance_metric_function_name)
+
     speed_coefficient =
       Keyword.get(opts, :speed_coefficient, @default_speed_coefficient)
 
@@ -329,7 +337,9 @@ defmodule RoboSoccerPlatform.GameController do
       speed_coefficient: speed_coefficient,
       room_code: generate_room_code(),
       aggregation_function:
-        Function.capture(RoboSoccerPlatform.AggregationFunctions, aggregation_function_name, 1)
+        Function.capture(RoboSoccerPlatform.AggregationFunctions, aggregation_function_name, 1),
+      compliance_metric_function:
+        Function.capture(RoboSoccerPlatform.ComplianceMetricFunctions, compliance_metric_function_name, 3)
     }
   end
 
@@ -347,15 +357,9 @@ defmodule RoboSoccerPlatform.GameController do
     }
   end
 
-  @spec calculate_compliance_metric([player_input()], float(), float()) :: float()
-  defp calculate_compliance_metric([], _, _), do: 0.0
-
-  defp calculate_compliance_metric(player_inputs, aggregated_x, aggregated_y) do
-    player_inputs
-    |> Enum.reduce(0.0, fn %{x: x, y: y}, acc ->
-      acc + :math.sqrt(:math.pow(x - aggregated_x, 2) + :math.pow(y - aggregated_y, 2))
-    end)
-    |> Kernel./(length(player_inputs))
+  @spec calculate_compliance_metric([player_input()], float(), float(), ([player_input()], float(), float() -> float())) :: float()
+  defp calculate_compliance_metric(player_inputs, aggregated_x, aggregated_y, compliance_metric_function) do
+    compliance_metric_function.(player_inputs, aggregated_x, aggregated_y)
   end
 
   @spec update_dashboard_steering_state(State.t()) :: :ok
