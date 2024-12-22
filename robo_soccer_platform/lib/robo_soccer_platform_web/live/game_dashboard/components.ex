@@ -65,10 +65,6 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
       |> assign(green_cooperation_metric: green_cooperation_metric)
       |> assign(red_direction: red_direction)
       |> assign(red_cooperation_metric: red_cooperation_metric)
-      |> assign(wifi_ssid: System.fetch_env!("WIFI_SSID"))
-      |> assign(wifi_psk: System.fetch_env!("WIFI_PSK"))
-      |> assign(ip: System.fetch_env!("SERVER_IP"))
-      |> assign(port: System.get_env("PHX_PORT", "4000"))
 
     ~H"""
     <div class="flex flex-col flex-1 gap-2">
