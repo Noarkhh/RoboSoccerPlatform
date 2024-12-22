@@ -57,11 +57,13 @@ defmodule RoboSoccerPlatformWeb.Player.Steering do
 
     ~H"""
     <div class="flex flex-col gap-4">
-      <div class="text-3xl text-center">
+      <div class="text-3xl text-center truncate">
         <%= @team_display %>
       </div>
-      <div class="text-3xl text-center">
-        <%= @player.username %>
+      <div class="flex-1 truncate">
+        <div class="truncate text-center font-bold">
+          <%= @player.username %>
+        </div>
       </div>
 
       <div id="container">
