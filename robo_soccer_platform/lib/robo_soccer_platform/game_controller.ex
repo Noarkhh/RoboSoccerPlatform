@@ -3,7 +3,7 @@ defmodule RoboSoccerPlatform.GameController do
 
   require Logger
   alias Hex.State
-  alias RoboSoccerPlatform.{AggregationFunctions, Player, RobotConnection}
+  alias RoboSoccerPlatform.{AggregationFunctions, CooperationMetricFunctions, Player, RobotConnection}
   alias RoboSoccerPlatformWeb.GameDashboard
 
   @game_state "game_state"
@@ -24,8 +24,8 @@ defmodule RoboSoccerPlatform.GameController do
 
     @type t :: %__MODULE__{
             aggregation_interval_ms: pos_integer(),
-            cooperation_metric_function: RoboSoccerPlatform.CooperationMetricFunctions.signature(),
-            aggregation_function: RoboSoccerPlatform.AggregationFunctions.signature(),
+            cooperation_metric_function: CooperationMetricFunctions.signature(),
+            aggregation_function: AggregationFunctions.signature(),
             robot_connections: %{RoboSoccerPlatform.team() => pid()},
             robot_instructions: %{RoboSoccerPlatform.team() => %{
               x: float(), y: float(), current_cooperation_metric: float()
@@ -334,10 +334,10 @@ defmodule RoboSoccerPlatform.GameController do
       end
 
     cooperation_metric_function =
-      if {cooperation_metric_function_name, 3} in RoboSoccerPlatform.CooperationMetricFunctions.__info__(
+      if {cooperation_metric_function_name, 3} in CooperationMetricFunctions.__info__(
            :functions
          ) do
-        Function.capture(RoboSoccerPlatform.CooperationMetricFunctions, cooperation_metric_function_name, 3)
+        Function.capture(CooperationMetricFunctions, cooperation_metric_function_name, 3)
       else
         raise "Provided cooperation metric function not implemented: RoboSoccerPlatform.CooperationMetricFunctions.#{Atom.to_string(cooperation_metric_function_name)}/3"
       end
@@ -368,7 +368,7 @@ defmodule RoboSoccerPlatform.GameController do
     }
   end
 
-  @spec calculate_cooperation_metric([player_input()], float(), float(), RoboSoccerPlatform.CooperationMetricFunctions.signature()) :: float()
+  @spec calculate_cooperation_metric([player_input()], float(), float(), CooperationMetricFunctions.signature()) :: float()
   defp calculate_cooperation_metric(player_inputs, aggregated_x, aggregated_y, cooperation_metric_function) do
     cooperation_metric_function.(player_inputs, aggregated_x, aggregated_y)
   end
@@ -395,7 +395,7 @@ defmodule RoboSoccerPlatform.GameController do
     Players currently registered: #{inspect(Enum.map(player_inputs, fn {_id, input} -> input.player end))}
     """)
 
-    RoboSoccerPlatformWeb.GameDashboard.update_steering_state(
+    GameDashboard.update_steering_state(
       state.game_dashboard_pid,
       %{
         player_inputs: player_inputs,
