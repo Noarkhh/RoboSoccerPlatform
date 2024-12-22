@@ -71,19 +71,14 @@ defmodule RoboSoccerPlatformWeb.Player.Steering do
           phx-update="ignore"
           data-inner_joystick_color={@inner_joystick_color}
           data-outer_joystick_color={@outer_joystick_color}
-          class={"w-[min(70vw,70vh)] h-[min(70vw,70vh)] m-auto"}
+          class={"w-[min(70vw,70vh)] h-[min(70vw,70vh)] mt-24 mx-auto"}
         >
           <!-- joystick will be rendered here -->
         </div>
       </div>
 
-      <div :if={@game_state == :stopped} class="absolute left-0 top-6 right-0 bottom-0 bg-sky-blue">
-        <div class="text-3xl font-bold text-center mt-64">
-          Rozgrywka wstrzymana przez organizatora.
-        </div>
-        <div class="text-3xl font-bold text-center">
-          Proszę czekać...
-        </div>
+      <div :if={@game_state == :stopped} class="absolute left-0 top-0 right-0 bottom-0 bg-red-600">
+        <img src="/images/stop.png" alt="stop" class="p-8 mx-auto mt-24">
       </div>
     </div>
     """
