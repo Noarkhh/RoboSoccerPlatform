@@ -77,9 +77,8 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
       </div>
       <div class="grid grid-flow-col auto-cols-fr w-full gap-2">
         <div class="flex flex-col flex-1 gap-4">
-          <.score red_goals={@teams["red"].goals} green_goals={@teams["green"].goals} />
-          <.directions red_direction={@red_direction} green_direction={@green_direction} />
           <.cooperation_metrics red_cooperation_metric={@red_cooperation_metric} green_cooperation_metric={@green_cooperation_metric} />
+          <.directions_and_score red_direction={@red_direction} green_direction={@green_direction} red_goals={@teams["red"].goals} green_goals={@teams["green"].goals} />
           <.teams
             red_players={@teams["red"].player_inputs}
             green_players={@teams["green"].player_inputs}
@@ -246,29 +245,12 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
     """
   end
 
+  attr :red_direction, :string, required: true
+  attr :green_direction, :string, required: true
   attr :red_goals, :integer, default: 0
   attr :green_goals, :integer, default: 0
 
-  defp score(assigns) do
-    ~H"""
-    <div class="bg-white px-4 py-2 text-3xl border border-solid border-black">
-      <div class="flex min-w-0">
-        <div class="flex-1 bg-light-red p-4"></div>
-
-        <div class="flex-1 p-4 flex items-center justify-center text-3xl whitespace-nowrap">
-          <%= @red_goals %> : <%= @green_goals %>
-        </div>
-
-        <div class="flex-1 bg-light-green p-4"></div>
-      </div>
-    </div>
-    """
-  end
-
-  attr :red_direction, :string, required: true
-  attr :green_direction, :string, required: true
-
-  defp directions(assigns) do
+  defp directions_and_score(assigns) do
     ~H"""
     <div class="bg-white px-4 py-2 text-3xl border border-solid border-black">
       <div class="flex min-w-0">
@@ -278,6 +260,10 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
           <span class="material-icons-outlined">
             <%= @red_direction %>
           </span>
+        </div>
+
+        <div class="flex-1 p-4 flex items-center justify-center text-3xl whitespace-nowrap">
+          <%= @red_goals %> : <%= @green_goals %>
         </div>
 
         <div class="flex-1 p-4 flex items-center justify-center text-3xl whitespace-nowrap">
