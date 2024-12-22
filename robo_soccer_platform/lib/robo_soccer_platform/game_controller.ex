@@ -199,10 +199,11 @@ defmodule RoboSoccerPlatform.GameController do
       state
       | game_state: :lobby,
         aggregation_timer: nil,
-        room_code: generate_room_code()
+        room_code: generate_room_code(),
+        total_cooperation_metrics: Map.new(state.robot_connections, fn {team, _robot_connection} -> {team, 0.0} end)
     }
 
-    GameDashboard.update_room_code(state.game_dashboard_pid, state.room_code)
+    GameDashboard.update_room(state.game_dashboard_pid, state.room_code)
     update_dashboard_steering_state(state)
 
     {:noreply, state}

@@ -28,9 +28,9 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
     GenServer.cast(game_dashboard_pid, {:update_steering_state, steering_state})
   end
 
-  @spec update_room_code(pid(), String.t()) :: :ok
-  def update_room_code(game_dashoard_pid, room_code) do
-    GenServer.cast(game_dashoard_pid, {:update_room_code, room_code})
+  @spec update_room(pid(), String.t()) :: :ok
+  def update_room(game_dashoard_pid, room_code) do
+    GenServer.cast(game_dashoard_pid, {:update_room, room_code})
   end
 
   @impl true
@@ -105,9 +105,10 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
   end
 
   @impl true
-  def handle_cast({:update_room_code, room_code}, socket) do
+  def handle_cast({:update_room, room_code}, socket) do
     socket
     |> assign(room_code: room_code)
+    |> assign(seconds_left: 10 * 60)
     |> then(&{:noreply, &1})
   end
 
