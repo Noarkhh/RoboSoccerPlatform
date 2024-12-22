@@ -16,6 +16,13 @@ import Config
 #
 # Alternatively, you can use `mix phx.gen.release` to generate a `bin/server`
 # script that automatically sets the env var above.
+#
+red_robot_connection_type =
+  System.fetch_env!("RED_ROBOT_CONNECTION_TYPE") |> String.downcase() |> String.to_atom()
+
+green_robot_connection_type =
+  System.fetch_env!("GREEN_ROBOT_CONNECTION_TYPE") |> String.downcase() |> String.to_atom()
+
 config :robo_soccer_platform, RoboSoccerPlatform.GameController,
   aggregation_interval_ms: System.get_env("AGGREGATION_INTERVAL_MS", "10") |> String.to_integer(),
   aggregation_function_name:
@@ -28,16 +35,8 @@ config :robo_soccer_platform, RoboSoccerPlatform.GameController,
     |> String.to_atom(),
   speed_coefficient: System.get_env("SPEED_COEFFICIENT", "0.5") |> String.to_float(),
   robot_configs: %{
-    "red" => %{
-      robot_ip_address:
-        System.fetch_env!("RED_ROBOT_IP") |> RoboSoccerPlatform.ConfigUtils.parse_ip_address!(),
-      local_port: System.fetch_env!("RED_ROBOT_SERVER_PORT") |> String.to_integer()
-    },
-    "green" => %{
-      robot_ip_address:
-        System.fetch_env!("GREEN_ROBOT_IP") |> RoboSoccerPlatform.ConfigUtils.parse_ip_address!(),
-      local_port: System.fetch_env!("GREEN_ROBOT_SERVER_PORT") |> String.to_integer()
-    }
+    "red" => RoboSoccerPlatform.ConfigUtils.get_robot_config("RED"),
+    "green" => RoboSoccerPlatform.ConfigUtils.get_robot_config("GREEN")
   }
 
 config :robo_soccer_platform, RoboSoccerPlatformWeb.GameDashboard,

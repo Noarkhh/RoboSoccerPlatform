@@ -1,0 +1,2 @@
+defmodule RoboSoccerPlatform.RobotConnection.BluetoothConnection do
+end

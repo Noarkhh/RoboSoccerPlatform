@@ -2,13 +2,21 @@ defmodule RoboSoccerPlatform.GameController do
   use GenServer
 
   require Logger
-  alias Hex.State
-  alias RoboSoccerPlatform.{AggregationFunctions, CooperationMetricFunctions, Player, RobotConnection}
+
+  alias RoboSoccerPlatform.{
+    AggregationFunctions,
+    CooperationMetricFunctions,
+    Player,
+    RobotConnection
+  }
+
   alias RoboSoccerPlatformWeb.GameDashboard
 
   @game_state "game_state"
 
-  @type robot_config :: %{robot_ip_address: :inet.ip_address(), local_port: :inet.port_number()}
+  @type robot_config ::
+          {RobotConnection.TCPServerSocketConnection, %{local_port: :inet.port_number()}}
+          | {RobotConnection.BluetoothConnection, %{bluetooth_serial_port: String.t()}}
   @type option ::
           {:aggregation_interval_ms, pos_integer()}
           | {:aggregation_function_name, atom()}
@@ -20,16 +28,38 @@ defmodule RoboSoccerPlatform.GameController do
   @type player_input :: %{player: Player.t(), x: float(), y: float()}
 
   defmodule State do
+    @moduledoc false
+    defmodule TeamState do
+      @type t :: %__MODULE__{
+              robot_connection: pid(),
+              robot_connection_module: RoboSoccerPlatform.RobotConnection.t(),
+              instruction: %{x: float(), y: float()},
+              total_cooperation_metric: float()
+            }
+
+      @enforce_keys [:robot_connection, :robot_connection_module]
+      defstruct @enforce_keys ++
+                  [
+                    instruction: %{x: 0.0, y: 0.0},
+                    total_cooperation_metric: 0.0
+                  ]
+    end
+
     alias RoboSoccerPlatform.GameController
 
     @type t :: %__MODULE__{
             aggregation_interval_ms: pos_integer(),
             cooperation_metric_function: CooperationMetricFunctions.signature(),
             aggregation_function: AggregationFunctions.signature(),
-            robot_connections: %{RoboSoccerPlatform.team() => pid()},
-            robot_instructions: %{RoboSoccerPlatform.team() => %{
-              x: float(), y: float(), current_cooperation_metric: float()
-            }},
+            team_states: %{RoboSoccerPlatform.team() => TeamState.t()},
+            robot_connections: %{RoboSoccerPlatform.team() => {pid(), RobotConnection.t()}},
+            robot_instructions: %{
+              RoboSoccerPlatform.team() => %{
+                x: float(),
+                y: float(),
+                current_cooperation_metric: float()
+              }
+            },
             total_cooperation_metrics: %{RoboSoccerPlatform.team() => float()},
             player_inputs: %{(player_id :: String.t()) => GameController.player_input()},
             player_pids: %{pid() => player_id :: String.t()},
@@ -45,7 +75,8 @@ defmodule RoboSoccerPlatform.GameController do
       :cooperation_metric_function,
       :robot_connections,
       :speed_coefficient,
-      :room_code
+      :room_code,
+      :team_states
     ]
     defstruct @enforce_keys ++
                 [
@@ -173,8 +204,8 @@ defmodule RoboSoccerPlatform.GameController do
   def handle_info(%{topic: @game_state, event: "stop_game"}, state) do
     robot_instructions =
       state.robot_connections
-      |> Map.new(fn {team, robot_connection} ->
-        RobotConnection.send_instruction(robot_connection, %{x: 0.0, y: 0.0})
+      |> Map.new(fn {team, {robot_connection, robot_connection_module}} ->
+        robot_connection_module.send_instruction(robot_connection, %{x: 0.0, y: 0.0})
         {team, %{x: 0.0, y: 0.0, current_cooperation_metric: 0.0}}
       end)
 
@@ -200,7 +231,8 @@ defmodule RoboSoccerPlatform.GameController do
       | game_state: :lobby,
         aggregation_timer: nil,
         room_code: generate_room_code(),
-        total_cooperation_metrics: Map.new(state.robot_connections, fn {team, _robot_connection} -> {team, 0.0} end)
+        total_cooperation_metrics:
+          Map.new(state.robot_connections, fn {team, _robot_connection} -> {team, 0.0} end)
     }
 
     GameDashboard.update_room(state.game_dashboard_pid, state.room_code)
@@ -235,7 +267,7 @@ defmodule RoboSoccerPlatform.GameController do
   def handle_info(:aggregate, %State{game_state: :started} = state) do
     robot_instructions =
       state.robot_connections
-      |> Map.new(fn {team, robot_connection} ->
+      |> Map.new(fn {team, {robot_connection, robot_connection_module}} ->
         team_player_inputs =
           state.player_inputs
           |> Map.values()
@@ -256,7 +288,11 @@ defmodule RoboSoccerPlatform.GameController do
             state.cooperation_metric_function
           )
 
-        RobotConnection.send_instruction(robot_connection, %{x: aggregated_x, y: aggregated_y})
+        robot_connection_module.send_instruction(robot_connection, %{
+          x: aggregated_x,
+          y: aggregated_y
+        })
+
         {
           team,
           %{
@@ -268,11 +304,15 @@ defmodule RoboSoccerPlatform.GameController do
       end)
 
     total_cooperation_metrics =
-      Map.merge(robot_instructions, state.total_cooperation_metrics,
-      fn _k, %{current_cooperation_metric: current_cooperation_metric}, total_cooperation_metric ->
-        total_cooperation_metric + current_cooperation_metric
-      end
-    )
+      Map.merge(
+        robot_instructions,
+        state.total_cooperation_metrics,
+        fn _k,
+           %{current_cooperation_metric: current_cooperation_metric},
+           total_cooperation_metric ->
+          total_cooperation_metric + current_cooperation_metric
+        end
+      )
 
     state = %{
       state
@@ -306,11 +346,11 @@ defmodule RoboSoccerPlatform.GameController do
     robot_connections =
       opts
       |> Keyword.fetch!(:robot_configs)
-      |> Map.new(fn {team, %{robot_ip_address: ip_address, local_port: local_port}} ->
-        case RobotConnection.start(team, local_port, ip_address) do
+      |> Map.new(fn {team, {robot_connection_module, robot_connection_config}} ->
+        case robot_connection_module.start(team, robot_connection_config) do
           {:ok, pid} ->
             Logger.info("Started RobotConnection for team #{team} with pid #{inspect(pid)}")
-            {team, pid}
+            {team, {pid, robot_connection_module}}
 
           {:error, reason} ->
             raise "Failed starting RobotConnection for team #{team}, reason: #{reason}"
@@ -326,18 +366,14 @@ defmodule RoboSoccerPlatform.GameController do
       Map.new(robot_connections, fn {team, _robot_connection} -> {team, 0.0} end)
 
     aggregation_function =
-      if {aggregation_function_name, 1} in AggregationFunctions.__info__(
-           :functions
-         ) do
+      if {aggregation_function_name, 1} in AggregationFunctions.__info__(:functions) do
         Function.capture(AggregationFunctions, aggregation_function_name, 1)
       else
         raise "Provided aggregation function not implemented: RoboSoccerPlatform.AggregationFunctions.#{Atom.to_string(aggregation_function_name)}/1"
       end
 
     cooperation_metric_function =
-      if {cooperation_metric_function_name, 3} in CooperationMetricFunctions.__info__(
-           :functions
-         ) do
+      if {cooperation_metric_function_name, 3} in CooperationMetricFunctions.__info__(:functions) do
         Function.capture(CooperationMetricFunctions, cooperation_metric_function_name, 3)
       else
         raise "Provided cooperation metric function not implemented: RoboSoccerPlatform.CooperationMetricFunctions.#{Atom.to_string(cooperation_metric_function_name)}/3"
@@ -345,6 +381,7 @@ defmodule RoboSoccerPlatform.GameController do
 
     %State{
       robot_instructions: robot_instructions,
+      team_states: %{},
       total_cooperation_metrics: total_cooperation_metrics,
       robot_connections: robot_connections,
       aggregation_interval_ms: aggregation_interval_ms,
@@ -369,8 +406,18 @@ defmodule RoboSoccerPlatform.GameController do
     }
   end
 
-  @spec calculate_cooperation_metric([player_input()], float(), float(), CooperationMetricFunctions.signature()) :: float()
-  defp calculate_cooperation_metric(player_inputs, aggregated_x, aggregated_y, cooperation_metric_function) do
+  @spec calculate_cooperation_metric(
+          [player_input()],
+          float(),
+          float(),
+          CooperationMetricFunctions.signature()
+        ) :: float()
+  defp calculate_cooperation_metric(
+         player_inputs,
+         aggregated_x,
+         aggregated_y,
+         cooperation_metric_function
+       ) do
     cooperation_metric_function.(player_inputs, aggregated_x, aggregated_y)
   end
 
