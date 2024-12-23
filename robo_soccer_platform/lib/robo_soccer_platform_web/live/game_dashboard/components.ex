@@ -17,17 +17,17 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
     <div class="flex justify-evenly items-center col-span-2 ">
       <div class="flex flex-col items-center gap-4">
         <div class="text-7xl">WiFi</div>
-        <%= @wifi_qr_svg %>
-        <div class="text-xl">nazwa: <%= @wifi_ssid %> | hasło: <%= @wifi_psk %></div>
+        {@wifi_qr_svg}
+        <div class="text-xl">nazwa: {@wifi_ssid} | hasło: {@wifi_psk}</div>
       </div>
       <div class="flex flex-col text-center gap-8">
         <div class="text-5xl">Kod Pokoju</div>
-        <div class="text-9xl"><%= @room_code %></div>
+        <div class="text-9xl">{@room_code}</div>
       </div>
       <div class="flex flex-col items-center gap-4">
         <div class="text-7xl">Strona</div>
-        <%= @player_url_qr_svg %>
-        <div class="text-xl">http://<%= @ip %>:<%= @port %></div>
+        {@player_url_qr_svg}
+        <div class="text-xl">http://{@ip}:{@port}</div>
       </div>
     </div>
 
@@ -53,11 +53,11 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
   attr :player_url_qr_svg, :string, required: true
 
   def in_game_view(assigns) do
-    green_direction = Utils.point_to_direction(assigns.teams["green"].robot_instruction)
-    green_cooperation_metric = assigns.teams["green"].robot_instruction.current_cooperation_metric
+    green_direction = Utils.point_to_direction(assigns.teams["green"].current_instruction)
+    green_cooperation_metric = assigns.teams["green"].current_cooperation_metric
 
-    red_direction = Utils.point_to_direction(assigns.teams["red"].robot_instruction)
-    red_cooperation_metric = assigns.teams["red"].robot_instruction.current_cooperation_metric
+    red_direction = Utils.point_to_direction(assigns.teams["red"].current_instruction)
+    red_cooperation_metric = assigns.teams["red"].current_cooperation_metric
 
     assigns =
       assigns
@@ -70,7 +70,10 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
     <div class="flex flex-col flex-1 gap-2">
       <div class="grid grid-flow-col auto-cols-fr w-full gap-2">
         <div class="flex flex-col flex-1 gap-4">
-          <.cooperation_metrics red_cooperation_metric={@red_cooperation_metric} green_cooperation_metric={@green_cooperation_metric} />
+          <.cooperation_metrics
+            red_cooperation_metric={@red_cooperation_metric}
+            green_cooperation_metric={@green_cooperation_metric}
+          />
 
           <div class="flex gap-8">
             <.time_left seconds={@seconds_left} />
@@ -82,7 +85,6 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
               class="flex flex-1"
             />
           </div>
-
           <.teams
             red_players={@teams["red"].player_inputs}
             green_players={@teams["green"].player_inputs}
@@ -94,18 +96,18 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
           <div class="flex flex-col items-center text-7xl gap-8">
             <div class="flex flex-col text-center text-palette-500 gap-2">
               <div class="text-5xl">Kod Pokoju</div>
-              <div class="text-9xl"><%= @room_code %></div>
+              <div class="text-9xl">{@room_code}</div>
             </div>
             <div class="flex text-center gap-16">
               <div class="flex flex-col items-center gap-4">
                 <div class="text-5xl">WiFi</div>
-                <%= @wifi_qr_svg %>
-                <div class="text-xl">nazwa: <%= @wifi_ssid %> | hasło: <%= @wifi_psk %></div>
+                {@wifi_qr_svg}
+                <div class="text-xl">nazwa: {@wifi_ssid} | hasło: {@wifi_psk}</div>
               </div>
               <div class="flex flex-col items-center gap-4">
                 <div class="text-5xl">Strona</div>
-                <%= @player_url_qr_svg %>
-                <div class="text-xl">http://<%= @ip %>:<%= @port %></div>
+                {@player_url_qr_svg}
+                <div class="text-xl">http://{@ip}:{@port}</div>
               </div>
             </div>
           </div>
@@ -118,30 +120,50 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
         phx-click={if @game_state == :started, do: "stop_game", else: "start_game"}
         class="bg-palette-400 !text-palette-100 !text-4xl hover:bg-palette-500"
       >
-        <%= if @game_state == :started, do: "STOP", else: "START" %>
+        {if @game_state == :started, do: "STOP", else: "START"}
       </.button>
 
-      <.button phx-click="goal" phx-value-team="red" class="bg-light-red !text-black !text-4xl hover:bg-dark-red">
+      <.button
+        phx-click="goal"
+        phx-value-team="red"
+        class="bg-light-red !text-black !text-4xl hover:bg-dark-red"
+      >
         GOL CZERWONI
       </.button>
 
-      <.button phx-click="goal" phx-value-team="green" class="bg-light-green !text-black !text-4xl hover:bg-dark-green">
+      <.button
+        phx-click="goal"
+        phx-value-team="green"
+        class="bg-light-green !text-black !text-4xl hover:bg-dark-green"
+      >
         GOL ZIELONI
       </.button>
 
-      <.button phx-click="reset_score" class="bg-palette-400 !text-palette-100 !text-4xl hover:bg-palette-500">
+      <.button
+        phx-click="reset_score"
+        class="bg-palette-400 !text-palette-100 !text-4xl hover:bg-palette-500"
+      >
         ZRESETUJ WYNIK
       </.button>
 
-      <.button phx-click="new_room" class="bg-palette-400 !text-palette-100 !text-4xl hover:bg-palette-500">
+      <.button
+        phx-click="new_room"
+        class="bg-palette-400 !text-palette-100 !text-4xl hover:bg-palette-500"
+      >
         NOWY POKÓJ
       </.button>
 
-      <.button phx-click="show_stats" class="bg-palette-400 !text-palette-100 !text-4xl hover:bg-palette-500">
+      <.button
+        phx-click="show_stats"
+        class="bg-palette-400 !text-palette-100 !text-4xl hover:bg-palette-500"
+      >
         STATYSTYKI
       </.button>
 
-      <.button phx-click="reset_stats" class="bg-palette-100 !text-palette-400 !text-4xl hover:bg-palette-300">
+      <.button
+        phx-click="reset_stats"
+        class="bg-palette-100 !text-palette-400 !text-4xl hover:bg-palette-300"
+      >
         ZRESETUJ STATYSTYKI
       </.button>
     </div>
@@ -157,38 +179,55 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
   def game_stats_modal(assigns) do
     assigns =
       assigns
-      |> assign(green_current_cooperation_metric: assigns.teams["green"].robot_instruction.current_cooperation_metric)
-      |> assign(red_current_cooperation_metric: assigns.teams["red"].robot_instruction.current_cooperation_metric)
-      |> assign(green_total_cooperation_metric:
-        average_cooperation_metrics(
-          assigns.total_cooperation_metrics["green"],
-          assigns.total_cooperation_metrics.number_of_measurements
-        )
+      |> assign(
+        green_current_cooperation_metric: assigns.teams["green"].current_cooperation_metric
       )
-      |> assign(red_total_cooperation_metric:
-        average_cooperation_metrics(
-          assigns.total_cooperation_metrics["red"],
-          assigns.total_cooperation_metrics.number_of_measurements
-        )
+      |> assign(red_current_cooperation_metric: assigns.teams["red"].current_cooperation_metric)
+      |> assign(
+        green_total_cooperation_metric:
+          average_cooperation_metrics(
+            assigns.teams["green"].total_cooperation_metrics,
+            assigns.number_of_aggregations
+          )
+      )
+      |> assign(
+        red_total_cooperation_metric:
+          average_cooperation_metrics(
+            assigns.teams["red"].total_cooperation_metrics,
+            assigns.number_of_aggregations
+          )
       )
 
     ~H"""
-    <.modal id={@id} show on_cancel={@on_cancel} class="bg-palette-100" container_class="flex flex-col gap-4">
+    <.modal
+      id={@id}
+      show
+      on_cancel={@on_cancel}
+      class="bg-palette-100"
+      container_class="flex flex-col gap-4"
+    >
       <div class="text-center text-2xl">
         Aktualny poziom zgodności drużyn
       </div>
-      <.cooperation_metrics red_cooperation_metric={@red_current_cooperation_metric} green_cooperation_metric={@green_current_cooperation_metric} />
+      <.cooperation_metrics
+        red_cooperation_metric={@red_current_cooperation_metric}
+        green_cooperation_metric={@green_current_cooperation_metric}
+      />
 
       <div class="text-center text-2xl">
         Średni poziom zgodności drużyn
       </div>
-      <.cooperation_metrics red_cooperation_metric={@red_total_cooperation_metric} green_cooperation_metric={@green_total_cooperation_metric} />
+      <.cooperation_metrics
+        red_cooperation_metric={@red_total_cooperation_metric}
+        green_cooperation_metric={@green_total_cooperation_metric}
+      />
     </.modal>
     """
   end
 
   @spec average_cooperation_metrics(float(), integer()) :: float()
   defp average_cooperation_metrics(_total_coop, 0), do: 0.00
+
   defp average_cooperation_metrics(total_coop, number_of_measures) do
     total_coop / number_of_measures
   end
@@ -228,21 +267,22 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
   attr :player_class, :string, default: ""
 
   defp team(assigns) do
-    players_number_display = case length(assigns.players) do
-      1 -> "1 gracz"
-      number_of_players -> "#{number_of_players} graczy"
-    end
+    players_number_display =
+      case length(assigns.players) do
+        1 -> "1 gracz"
+        number_of_players -> "#{number_of_players} graczy"
+      end
 
     assigns = assign(assigns, players_number_display: players_number_display)
 
     ~H"""
     <div class="flex flex-col flex-1 min-w-0">
       <div class={"text-center font-bold #{@class} p-2"}>
-        <%= @title %> (<%= @players_number_display %>)
+        {@title} ({@players_number_display})
       </div>
 
       <div class={"flex flex-col px-8 py-8 #{@container_class}"}>
-        <div class={"flex flex-col grow-0 shrink-0 basis-96 gap-2 overflow-auto"}>
+        <div class="flex flex-col grow-0 shrink-0 basis-96 gap-2 overflow-auto">
           <.player
             :for={player <- @players}
             class={@player_class}
@@ -260,28 +300,34 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
   attr :class, :string, default: ""
 
   defp player(assigns) do
-    direction_icon = if assigns.game_stopped? do
-      "pan_tool"
-    else
-      Utils.point_to_direction(%{x: assigns.player.x, y: assigns.player.y})
-    end
+    direction_icon =
+      if assigns.game_stopped? do
+        "pan_tool"
+      else
+        Utils.point_to_direction(%{x: assigns.player.x, y: assigns.player.y})
+      end
 
     assigns = assign(assigns, direction_icon: direction_icon)
 
     ~H"""
     <div class={"flex rounded-lg gap-4 px-2 #{@class}"}>
-      <div phx-click="kick" phx-value-player_id={@player.player.id} type="button" class="cursor-pointer ">
-        <img src="/images/remove.svg" alt="remove" class="mx-auto w-6 h-6 p-0.5">
+      <div
+        phx-click="kick"
+        phx-value-player_id={@player.player.id}
+        type="button"
+        class="cursor-pointer "
+      >
+        <img src="/images/remove.svg" alt="remove" class="mx-auto w-6 h-6 p-0.5" />
       </div>
 
       <div class="flex-1 truncate">
         <div class="truncate font-bold">
-          <%= @player.player.username %>
+          {@player.player.username}
         </div>
       </div>
 
       <span class="material-icons-outlined">
-        <%= @direction_icon %>
+        {@direction_icon}
       </span>
     </div>
     """
@@ -307,8 +353,8 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
       |> assign(seconds: seconds)
 
     ~H"""
-    <div class={"w-40 min-w-40 max-w-40 bg-palette-400 text-5xl text-palette-100 border border-solid border-black rounded-3xl m-auto py-4 text-center"}>
-      <%= @minutes %>:<%= @seconds %>
+    <div class="w-40 min-w-40 max-w-40 bg-palette-400 text-5xl text-palette-100 border border-solid border-black rounded-3xl m-auto py-4 text-center">
+      {@minutes}:{@seconds}
     </div>
     """
   end
@@ -326,17 +372,17 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
 
       <div class="flex-1 p-4 flex items-center justify-center whitespace-nowrap">
         <span class="material-icons-outlined text-light-red !text-5xl">
-          <%= @red_direction %>
+          {@red_direction}
         </span>
       </div>
 
       <div class="flex-1 p-4 flex items-center justify-center text-5xl whitespace-nowrap text-palette-100">
-        <%= @red_goals %> : <%= @green_goals %>
+        {@red_goals} : {@green_goals}
       </div>
 
       <div class="flex-1 p-4 flex items-center justify-center whitespace-nowrap">
         <span class="material-icons-outlined text-light-green !text-5xl">
-          <%= @green_direction %>
+          {@green_direction}
         </span>
       </div>
 
@@ -352,7 +398,9 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
     assigns =
       assigns
       |> assign(red_cooperation_metric: float_to_string_percent(assigns.red_cooperation_metric))
-      |> assign(green_cooperation_metric: float_to_string_percent(assigns.green_cooperation_metric))
+      |> assign(
+        green_cooperation_metric: float_to_string_percent(assigns.green_cooperation_metric)
+      )
 
     ~H"""
     <div class="bg-palette-400 px-4 py-2 border border-solid border-black rounded-3xl">
@@ -364,11 +412,11 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
         </span>
 
         <div class="flex-1 p-4 flex items-center justify-center text-5xl whitespace-nowrap text-palette-100">
-          <%= @red_cooperation_metric %> %
+          {@red_cooperation_metric} %
         </div>
 
         <div class="flex-1 p-4 flex items-center justify-center text-5xl whitespace-nowrap text-palette-100">
-          <%= @green_cooperation_metric %> %
+          {@green_cooperation_metric} %
         </div>
 
         <span class="material-icons-outlined text-palette-100 !text-5xl my-auto">
@@ -387,7 +435,7 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
 
     decimals = if percent == 100, do: 1, else: 2
 
-    :erlang.float_to_binary(percent, [decimals: decimals])
+    :erlang.float_to_binary(percent, decimals: decimals)
   end
 
   @spec pad_to_two_digits(integer()) :: String.t()
