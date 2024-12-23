@@ -119,4 +119,15 @@ defmodule RoboSoccerPlatformWeb.Player.Steering do
   def handle_info(%{topic: @game_state, event: "new_room"}, socket) do
     {:noreply, push_navigate(socket, to: "/player")}
   end
+
+  @impl true
+  def handle_info(%{topic: @game_state, event: "kick", payload: %{player_id: player_id}}, socket)
+      when player_id == socket.assigns.player.id do
+    {:noreply, push_navigate(socket, to: "/player")}
+  end
+
+  @impl true
+  def handle_info(%{topic: @game_state, event: "kick"}, socket) do
+    {:noreply, socket}
+  end
 end

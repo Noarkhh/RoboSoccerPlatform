@@ -176,6 +176,12 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
     {:noreply, assign(socket, stats_visible: false)}
   end
 
+  def handle_event("kick", %{"player_id" => player_id}, socket) do
+    Endpoint.broadcast_from(self(), @game_state, "kick", %{player_id: player_id})
+
+    {:noreply, socket}
+  end
+
   @impl true
   def handle_info(:tick, socket) when socket.assigns.game_state != :started,
     do: {:noreply, socket}

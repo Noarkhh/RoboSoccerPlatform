@@ -145,7 +145,7 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
       </.button>
 
       <.button phx-click="show_stats" class="bg-palette-400 !text-palette-100 !text-4xl hover:bg-palette-500">
-        POKAŻ STATYSTYKI
+        STATYSTYKI
       </.button>
     </div>
     """
@@ -160,7 +160,7 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
     <div class="flex flex-1">
       <.team
         players={@red_players}
-        color={:red}
+        title="Drużyna czerwona"
         class="rounded-tl-3xl bg-gradient-to-r from-light-red to-palette-300"
         player_class="bg-light-red"
         container_class="rounded-bl-3xl bg-palette-400"
@@ -168,7 +168,7 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
       />
       <.team
         players={@green_players}
-        color={:green}
+        title="Drużyna zielona"
         class="rounded-tr-3xl bg-gradient-to-l from-light-green to-palette-300"
         player_class="bg-light-green"
         container_class="rounded-br-3xl bg-palette-400"
@@ -179,7 +179,7 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
   end
 
   attr :players, :list, required: true
-  attr :color, :atom, required: true
+  attr :title, :string, required: true
   attr :game_stopped?, :boolean, required: true
   attr :class, :string, default: ""
   attr :container_class, :string, default: ""
@@ -196,13 +196,17 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
     ~H"""
     <div class="flex flex-col flex-1 min-w-0">
       <div class={"text-center font-bold #{@class} p-2"}>
-        Drużyna <%= if @color == :red, do: "czerwona", else: "zielona" %> (<%= @players_number_display %>)
+        <%= @title %> (<%= @players_number_display %>)
       </div>
+
       <div class={"flex flex-col px-8 py-8 #{@container_class}"}>
-        <div class={"flex flex-col grow-0 shrink-0 basis-96 gap-2 #{@container_class} overflow-auto"}>
-          <div :for={player <- @players} class={"flex #{@player_class} rounded-lg gap-4 px-2"}>
-            <.player player={player} game_stopped?={@game_stopped?}/>
-          </div>
+        <div class={"flex flex-col grow-0 shrink-0 basis-96 gap-2 overflow-auto"}>
+          <.player
+            :for={player <- @players}
+            class={@player_class}
+            player={player}
+            game_stopped?={@game_stopped?}
+          />
         </div>
       </div>
     </div>
@@ -211,6 +215,7 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
 
   attr :player, :map, required: true
   attr :game_stopped?, :boolean, required: true
+  attr :class, :string, default: ""
 
   defp player(assigns) do
     direction_icon = if assigns.game_stopped? do
@@ -222,15 +227,21 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
     assigns = assign(assigns, direction_icon: direction_icon)
 
     ~H"""
-    <div class="flex-1 truncate">
-      <div class="truncate font-bold">
-        <%= @player.player.username %>
+    <div class={"flex rounded-lg gap-4 px-2 #{@class}"}>
+      <div phx-click="kick" phx-value-player_id={@player.player.id} type="button" class="cursor-pointer ">
+        <img src="/images/remove.svg" alt="remove" class="mx-auto w-6 h-6 p-0.5">
       </div>
-    </div>
 
-    <span class="material-icons-outlined">
-      <%= @direction_icon %>
-    </span>
+      <div class="flex-1 truncate">
+        <div class="truncate font-bold">
+          <%= @player.player.username %>
+        </div>
+      </div>
+
+      <span class="material-icons-outlined">
+        <%= @direction_icon %>
+      </span>
+    </div>
     """
   end
 

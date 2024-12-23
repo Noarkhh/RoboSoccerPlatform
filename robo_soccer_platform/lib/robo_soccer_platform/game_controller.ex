@@ -210,6 +210,15 @@ defmodule RoboSoccerPlatform.GameController do
   end
 
   @impl true
+  def handle_info(%{topic: @game_state, event: "kick", payload: %{player_id: player_id}}, state) do
+    {player_input, _} = Map.pop(state.player_inputs, player_id)
+
+    Logger.debug("Player kicked: #{inspect(player_input.player)}")
+
+    {:noreply, state}
+  end
+
+  @impl true
   def handle_info({:DOWN, _ref, :process, player_pid, _reason}, state) do
     case Map.pop(state.player_pids, player_pid) do
       {nil, _player_pids} ->
