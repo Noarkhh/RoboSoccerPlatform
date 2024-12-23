@@ -17,17 +17,17 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
     <div class="flex justify-evenly items-center col-span-2 ">
       <div class="flex flex-col items-center gap-4">
         <div class="text-7xl">WiFi</div>
-        <%= @wifi_qr_svg %>
-        <div class="text-xl">nazwa: <%= @wifi_ssid %> | hasło: <%= @wifi_psk %></div>
+        {@wifi_qr_svg}
+        <div class="text-xl">nazwa: {@wifi_ssid} | hasło: {@wifi_psk}</div>
       </div>
       <div class="flex flex-col text-center gap-8">
         <div class="text-5xl">Kod Pokoju</div>
-        <div class="text-9xl"><%= @room_code %></div>
+        <div class="text-9xl">{@room_code}</div>
       </div>
       <div class="flex flex-col items-center gap-4">
         <div class="text-7xl">Strona</div>
-        <%= @player_url_qr_svg %>
-        <div class="text-xl">http://<%= @ip %>:<%= @port %></div>
+        {@player_url_qr_svg}
+        <div class="text-xl">http://{@ip}:{@port}</div>
       </div>
     </div>
 
@@ -53,11 +53,11 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
   attr :player_url_qr_svg, :string, required: true
 
   def in_game_view(assigns) do
-    green_direction = Utils.point_to_direction(assigns.teams["green"].robot_instruction)
-    green_cooperation_metric = assigns.teams["green"].robot_instruction.current_cooperation_metric
+    green_direction = Utils.point_to_direction(assigns.teams["green"].current_instruction)
+    green_cooperation_metric = assigns.teams["green"].current_cooperation_metric
 
-    red_direction = Utils.point_to_direction(assigns.teams["red"].robot_instruction)
-    red_cooperation_metric = assigns.teams["red"].robot_instruction.current_cooperation_metric
+    red_direction = Utils.point_to_direction(assigns.teams["red"].current_instruction)
+    red_cooperation_metric = assigns.teams["red"].current_cooperation_metric
 
     assigns =
       assigns
@@ -73,8 +73,16 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
       </div>
       <div class="grid grid-flow-col auto-cols-fr w-full gap-2">
         <div class="flex flex-col flex-1 gap-4">
-          <.cooperation_metrics red_cooperation_metric={@red_cooperation_metric} green_cooperation_metric={@green_cooperation_metric} />
-          <.directions_and_score red_direction={@red_direction} green_direction={@green_direction} red_goals={@teams["red"].goals} green_goals={@teams["green"].goals} />
+          <.cooperation_metrics
+            red_cooperation_metric={@red_cooperation_metric}
+            green_cooperation_metric={@green_cooperation_metric}
+          />
+          <.directions_and_score
+            red_direction={@red_direction}
+            green_direction={@green_direction}
+            red_goals={@teams["red"].goals}
+            green_goals={@teams["green"].goals}
+          />
           <.teams
             red_players={@teams["red"].player_inputs}
             green_players={@teams["green"].player_inputs}
@@ -86,18 +94,18 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
           <div class="flex flex-col items-center text-7xl gap-8">
             <div class="flex flex-col text-center text-palette-500 gap-2">
               <div class="text-5xl">Kod Pokoju</div>
-              <div class="text-9xl"><%= @room_code %></div>
+              <div class="text-9xl">{@room_code}</div>
             </div>
             <div class="flex text-center gap-16">
               <div class="flex flex-col items-center gap-4">
                 <div class="text-5xl">WiFi</div>
-                <%= @wifi_qr_svg %>
-                <div class="text-xl">nazwa: <%= @wifi_ssid %> | hasło: <%= @wifi_psk %></div>
+                {@wifi_qr_svg}
+                <div class="text-xl">nazwa: {@wifi_ssid} | hasło: {@wifi_psk}</div>
               </div>
               <div class="flex flex-col items-center gap-4">
                 <div class="text-5xl">Strona</div>
-                <%= @player_url_qr_svg %>
-                <div class="text-xl">http://<%= @ip %>:<%= @port %></div>
+                {@player_url_qr_svg}
+                <div class="text-xl">http://{@ip}:{@port}</div>
               </div>
             </div>
           </div>
@@ -110,26 +118,43 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
         phx-click={if @game_state == :started, do: "stop_game", else: "start_game"}
         class="bg-palette-400 !text-palette-100 !text-4xl hover:bg-palette-500"
       >
-        <%= if @game_state == :started, do: "STOP", else: "START" %>
+        {if @game_state == :started, do: "STOP", else: "START"}
       </.button>
 
-      <.button phx-click="goal" phx-value-team="red" class="bg-light-red !text-black !text-4xl hover:bg-dark-red">
+      <.button
+        phx-click="goal"
+        phx-value-team="red"
+        class="bg-light-red !text-black !text-4xl hover:bg-dark-red"
+      >
         GOL CZERWONI
       </.button>
 
-      <.button phx-click="goal" phx-value-team="green" class="bg-light-green !text-black !text-4xl hover:bg-dark-green">
+      <.button
+        phx-click="goal"
+        phx-value-team="green"
+        class="bg-light-green !text-black !text-4xl hover:bg-dark-green"
+      >
         GOL ZIELONI
       </.button>
 
-      <.button phx-click="reset_score" class="bg-palette-400 !text-palette-100 !text-4xl hover:bg-palette-500">
+      <.button
+        phx-click="reset_score"
+        class="bg-palette-400 !text-palette-100 !text-4xl hover:bg-palette-500"
+      >
         ZRESETUJ WYNIK
       </.button>
 
-      <.button phx-click="new_room" class="bg-palette-400 !text-palette-100 !text-4xl hover:bg-palette-500">
+      <.button
+        phx-click="new_room"
+        class="bg-palette-400 !text-palette-100 !text-4xl hover:bg-palette-500"
+      >
         NOWY POKÓJ
       </.button>
 
-      <.button phx-click="show_stats" class="bg-palette-400 !text-palette-100 !text-4xl hover:bg-palette-500">
+      <.button
+        phx-click="show_stats"
+        class="bg-palette-400 !text-palette-100 !text-4xl hover:bg-palette-500"
+      >
         POKAŻ STATYSTYKI
       </.button>
     </div>
@@ -171,22 +196,23 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
   attr :player_class, :string, default: ""
 
   defp team(assigns) do
-    players_number_display = case length(assigns.players) do
-      1 -> "1 gracz"
-      number_of_players -> "#{number_of_players} graczy"
-    end
+    players_number_display =
+      case length(assigns.players) do
+        1 -> "1 gracz"
+        number_of_players -> "#{number_of_players} graczy"
+      end
 
     assigns = assign(assigns, players_number_display: players_number_display)
 
     ~H"""
     <div class="flex flex-col flex-1 min-w-0">
       <div class={"text-center font-bold #{@class} p-2"}>
-        Drużyna <%= if @color == :red, do: "czerwona", else: "zielona" %> (<%= @players_number_display %>)
+        Drużyna {if @color == :red, do: "czerwona", else: "zielona"} ({@players_number_display})
       </div>
       <div class={"flex flex-col px-8 py-8 #{@container_class}"}>
         <div class={"flex flex-col grow-0 shrink-0 basis-96 gap-2 #{@container_class} overflow-auto"}>
           <div :for={player <- @players} class={"flex #{@player_class} rounded-lg gap-4 px-2"}>
-            <.player player={player} game_stopped?={@game_stopped?}/>
+            <.player player={player} game_stopped?={@game_stopped?} />
           </div>
         </div>
       </div>
@@ -198,23 +224,24 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
   attr :game_stopped?, :boolean, required: true
 
   defp player(assigns) do
-    direction_icon = if assigns.game_stopped? do
-      "pan_tool"
-    else
-      Utils.point_to_direction(%{x: assigns.player.x, y: assigns.player.y})
-    end
+    direction_icon =
+      if assigns.game_stopped? do
+        "pan_tool"
+      else
+        Utils.point_to_direction(%{x: assigns.player.x, y: assigns.player.y})
+      end
 
     assigns = assign(assigns, direction_icon: direction_icon)
 
     ~H"""
     <div class="flex-1 truncate">
       <div class="truncate font-bold">
-        <%= @player.player.username %>
+        {@player.player.username}
       </div>
     </div>
 
     <span class="material-icons-outlined">
-      <%= @direction_icon %>
+      {@direction_icon}
     </span>
     """
   end
@@ -239,7 +266,7 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
 
     ~H"""
     <div class="bg-palette-400 px-16 py-2 text-3xl text-palette-100 border border-solid border-black rounded-3xl">
-      <%= @minutes %>:<%= @seconds %>
+      {@minutes}:{@seconds}
     </div>
     """
   end
@@ -257,17 +284,17 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
 
         <div class="flex-1 p-4 flex items-center justify-center text-3xl whitespace-nowrap">
           <span class="material-icons-outlined text-light-red">
-            <%= @red_direction %>
+            {@red_direction}
           </span>
         </div>
 
         <div class="flex-1 p-4 flex items-center justify-center text-3xl whitespace-nowrap text-palette-100">
-          <%= @red_goals %> : <%= @green_goals %>
+          {@red_goals} : {@green_goals}
         </div>
 
         <div class="flex-1 p-4 flex items-center justify-center text-3xl whitespace-nowrap">
           <span class="material-icons-outlined text-light-green">
-            <%= @green_direction %>
+            {@green_direction}
           </span>
         </div>
 
@@ -292,11 +319,11 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
         <div class="flex-1 bg-gradient-to-r from-light-red to-palette-400 p-4 rounded-l-3xl"></div>
 
         <div class="flex-1 p-4 flex items-center justify-center text-3xl whitespace-nowrap text-palette-100">
-          <%= @red_cooperation_metric %>
+          {@red_cooperation_metric}
         </div>
 
         <div class="flex-1 p-4 flex items-center justify-center text-3xl whitespace-nowrap text-palette-100">
-          <%= @green_cooperation_metric %>
+          {@green_cooperation_metric}
         </div>
 
         <div class="flex-1 bg-gradient-to-l from-light-green to-palette-400 p-4 rounded-r-3xl"></div>
