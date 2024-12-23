@@ -151,6 +151,35 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
     """
   end
 
+  attr :total_cooperation_metrics, :map, required: true
+  attr :teams, :map, required: true
+  attr :id, :string, required: true
+  attr :show, :boolean, default: false
+  attr :on_cancel, JS, default: %JS{}
+
+  def game_stats_modal(assigns) do
+    assigns =
+      assigns
+      |> assign(green_current_cooperation_metric: assigns.teams["green"].robot_instruction.current_cooperation_metric)
+      |> assign(red_current_cooperation_metric: assigns.teams["red"].robot_instruction.current_cooperation_metric)
+      |> assign(green_total_cooperation_metric: assigns.total_cooperation_metrics["green"] / assigns.total_cooperation_metrics.number_of_measurements)
+      |> assign(red_total_cooperation_metric: assigns.total_cooperation_metrics["red"] / assigns.total_cooperation_metrics.number_of_measurements)
+
+    ~H"""
+    <.modal id={@id} show on_cancel={@on_cancel} class="bg-palette-100" container_class="flex flex-col gap-4">
+      <div class="text-center text-2xl">
+        Aktualny poziom zgodności drużyn
+      </div>
+      <.cooperation_metrics red_cooperation_metric={@red_current_cooperation_metric} green_cooperation_metric={@green_current_cooperation_metric} />
+
+      <div class="text-center text-2xl">
+        Średni poziom zgodności drużyn
+      </div>
+      <.cooperation_metrics red_cooperation_metric={@red_total_cooperation_metric} green_cooperation_metric={@green_total_cooperation_metric} />
+    </.modal>
+    """
+  end
+
   attr :red_players, :list, required: true
   attr :green_players, :list, required: true
   attr :game_stopped?, :boolean, default: false
@@ -306,29 +335,46 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
   attr :red_cooperation_metric, :string, required: true
   attr :green_cooperation_metric, :string, required: true
 
-  def cooperation_metrics(assigns) do
+  defp cooperation_metrics(assigns) do
     assigns =
       assigns
-      |> assign(red_cooperation_metric: Float.round(assigns.red_cooperation_metric, 2))
-      |> assign(green_cooperation_metric: Float.round(assigns.green_cooperation_metric, 2))
+      |> assign(red_cooperation_metric: float_to_string_percent(assigns.red_cooperation_metric))
+      |> assign(green_cooperation_metric: float_to_string_percent(assigns.green_cooperation_metric))
 
     ~H"""
     <div class="bg-palette-400 px-4 py-2 border border-solid border-black rounded-3xl">
       <div class="flex min-w-0">
         <div class="flex-1 bg-gradient-to-r from-light-red to-palette-400 p-4 rounded-l-3xl"></div>
 
+        <span class="material-icons-outlined text-palette-100 !text-5xl my-auto">
+          handshake
+        </span>
+
         <div class="flex-1 p-4 flex items-center justify-center text-5xl whitespace-nowrap text-palette-100">
-          <%= @red_cooperation_metric %>
+          <%= @red_cooperation_metric %> %
         </div>
 
         <div class="flex-1 p-4 flex items-center justify-center text-5xl whitespace-nowrap text-palette-100">
-          <%= @green_cooperation_metric %>
+          <%= @green_cooperation_metric %> %
         </div>
+
+        <span class="material-icons-outlined text-palette-100 !text-5xl my-auto">
+          handshake
+        </span>
 
         <div class="flex-1 bg-gradient-to-l from-light-green to-palette-400 p-4 rounded-r-3xl"></div>
       </div>
     </div>
     """
+  end
+
+  @spec float_to_string_percent(float()) :: string()
+  defp float_to_string_percent(float) do
+    percent = Float.round(100 * float, 2)
+
+    decimals = if percent == 100, do: 1, else: 2
+
+    :erlang.float_to_binary(percent, [decimals: decimals])
   end
 
   @spec pad_to_two_digits(integer()) :: String.t()

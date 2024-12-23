@@ -4,7 +4,7 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
   use RoboSoccerPlatformWeb, :live_view
 
   import RoboSoccerPlatformWeb.GameDashboard.Components,
-    only: [before_game_view: 1, in_game_view: 1, cooperation_metrics: 1]
+    only: [before_game_view: 1, in_game_view: 1, game_stats_modal: 1]
 
   alias RoboSoccerPlatformWeb.Endpoint
 
@@ -53,19 +53,21 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
     |> assign(seconds_left: 10 * 60)
     |> assign(timer: nil)
     |> assign(stats_visible: false)
-    |> assign(total_cooperation_metrics: %{"green" => 0.0, "red" => 0.0})
+    |> assign(total_cooperation_metrics: %{"green" => 0.0, "red" => 0.0, number_of_measurements: 0})
     |> then(&{:ok, &1})
   end
 
   @impl true
   def render(assigns) do
     ~H"""
-    <.modal :if={@stats_visible} id="my-modal" show on_cancel={JS.push("close_stats")}>
-      <div class="flex text-2xl">
-        Łączny poziom rozbieżnych decyzji
-      </div>
-      <.cooperation_metrics red_cooperation_metric={@total_cooperation_metrics["red"]} green_cooperation_metric={@total_cooperation_metrics["green"]} />
-    </.modal>
+    <.game_stats_modal
+      :if={@stats_visible}
+      id="my-modal"
+      show
+      on_cancel={JS.push("close_stats")}
+      teams={@teams}
+      total_cooperation_metrics={@total_cooperation_metrics}
+    />
 
     <div class="flex flex-col h-[80vh] gap-8">
       <.before_game_view
@@ -101,6 +103,7 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
   def handle_cast({:update_steering_state, steering_state}, socket) do
     socket
     |> assign(teams: update_teams(socket.assigns.teams, steering_state))
+    |> assign(total_cooperation_metrics: steering_state.total_cooperation_metrics)
     |> then(&{:noreply, &1})
   end
 
@@ -164,10 +167,7 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
 
   @impl true
   def handle_event("show_stats", _params, socket) do
-    total_cooperation_metrics = RoboSoccerPlatform.GameController.get_total_cooperation_metrics()
-
     socket
-    |> assign(total_cooperation_metrics: total_cooperation_metrics)
     |> assign(stats_visible: true)
     |> then(&{:noreply, &1})
   end
