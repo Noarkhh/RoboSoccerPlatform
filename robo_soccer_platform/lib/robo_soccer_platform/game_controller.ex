@@ -3,6 +3,8 @@ defmodule RoboSoccerPlatform.GameController do
 
   require Logger
 
+  alias Hex.State
+
   alias RoboSoccerPlatform.{
     AggregationFunctions,
     CooperationMetricFunctions,
@@ -33,14 +35,16 @@ defmodule RoboSoccerPlatform.GameController do
       @type t :: %__MODULE__{
               robot_connection: pid(),
               robot_connection_module: RoboSoccerPlatform.RobotConnection.t(),
-              instruction: %{x: float(), y: float()},
+              current_instruction: %{x: float(), y: float()},
+              current_cooperation_metric: float(),
               total_cooperation_metric: float()
             }
 
       @enforce_keys [:robot_connection, :robot_connection_module]
       defstruct @enforce_keys ++
                   [
-                    instruction: %{x: 0.0, y: 0.0},
+                    current_instruction: %{x: 0.0, y: 0.0},
+                    current_cooperation_metric: 0.0,
                     total_cooperation_metric: 0.0
                   ]
     end
@@ -51,19 +55,8 @@ defmodule RoboSoccerPlatform.GameController do
             aggregation_interval_ms: pos_integer(),
             cooperation_metric_function: CooperationMetricFunctions.signature(),
             aggregation_function: AggregationFunctions.signature(),
-            total_cooperation_metrics: %{
-              RoboSoccerPlatform.team() => float(),
-              number_of_measurements: integer()
-            },
+            number_of_aggregations: integer(),
             team_states: %{RoboSoccerPlatform.team() => TeamState.t()},
-            robot_connections: %{RoboSoccerPlatform.team() => {pid(), RobotConnection.t()}},
-            robot_instructions: %{
-              RoboSoccerPlatform.team() => %{
-                x: float(),
-                y: float(),
-                current_cooperation_metric: float()
-              }
-            },
             player_inputs: %{(player_id :: String.t()) => GameController.player_input()},
             player_pids: %{pid() => player_id :: String.t()},
             game_state: GameController.game_state(),
@@ -76,15 +69,12 @@ defmodule RoboSoccerPlatform.GameController do
       :aggregation_interval_ms,
       :aggregation_function,
       :cooperation_metric_function,
-      :robot_connections,
       :speed_coefficient,
       :room_code,
       :team_states
     ]
     defstruct @enforce_keys ++
                 [
-                  robot_instructions: %{},
-                  total_cooperation_metrics: %{},
                   player_inputs: %{},
                   player_pids: %{},
                   game_state: :lobby,
@@ -96,6 +86,11 @@ defmodule RoboSoccerPlatform.GameController do
   @spec get_game_state() :: game_state()
   def get_game_state() do
     GenServer.call(:game_controller, :get_game_state)
+  end
+
+  @spec get_total_cooperation_metrics() :: %{RoboSoccerPlatform.team() => float()}
+  def get_total_cooperation_metrics() do
+    GenServer.call(:game_controller, :get_total_cooperation_metrics)
   end
 
   @spec room_code_correct?(String.t()) :: boolean()
@@ -143,6 +138,16 @@ defmodule RoboSoccerPlatform.GameController do
   end
 
   @impl true
+  def handle_call(:get_total_cooperation_metrics, _from, state) do
+    total_cooperation_metrics =
+      Map.new(state.team_states, fn {team, team_state} ->
+        {team, team_state.total_cooperation_metrics}
+      end)
+
+    {:reply, total_cooperation_metrics, state}
+  end
+
+  @impl true
   def handle_call({:room_code_correct?, room_code}, _from, state) do
     {:reply, state.room_code == room_code, state}
   end
@@ -151,11 +156,11 @@ defmodule RoboSoccerPlatform.GameController do
   def handle_call({:init_game_dashboard, game_dashboard_pid}, _from, state) do
     steering_state = %{
       player_inputs: state.player_inputs,
-      robot_instructions: state.robot_instructions
+      team_states: state.team_states
     }
 
     {:reply, {state.room_code, steering_state, state.game_state},
-     %{state | game_dashboard_pid: game_dashboard_pid}}
+     %State{state | game_dashboard_pid: game_dashboard_pid}}
   end
 
   @impl true
@@ -179,7 +184,7 @@ defmodule RoboSoccerPlatform.GameController do
     Processes currently monitored: #{inspect(player_pids)}
     """)
 
-    state = %{state | player_inputs: player_inputs, player_pids: player_pids}
+    state = %State{state | player_inputs: player_inputs, player_pids: player_pids}
     update_dashboard_steering_state(state)
     {:noreply, state}
   end
@@ -188,7 +193,7 @@ defmodule RoboSoccerPlatform.GameController do
   def handle_cast({:update_player_input, player_id, x, y}, state) do
     state =
       if Map.has_key?(state.player_inputs, player_id) do
-        Bunch.Struct.update_in(state, [:player_inputs, player_id], &%{&1 | x: x, y: y})
+        update_in(state.player_inputs[player_id], &%{&1 | x: x, y: y})
       else
         Logger.warning("Tried to update input for not registered player #{inspect(player_id)}")
         state
@@ -209,19 +214,28 @@ defmodule RoboSoccerPlatform.GameController do
 
   @impl true
   def handle_info(%{topic: @game_state, event: "stop_game"}, state) do
-    robot_instructions =
-      state.robot_connections
-      |> Map.new(fn {team, {robot_connection, robot_connection_module}} ->
-        robot_connection_module.send_instruction(robot_connection, %{x: 0.0, y: 0.0})
-        {team, %{x: 0.0, y: 0.0, current_cooperation_metric: 0.0}}
+    team_states =
+      state.team_states
+      |> Map.new(fn {team, team_state} ->
+        team_state.robot_connection_module.send_instruction(
+          team_state.robot_connection,
+          %{x: 0.0, y: 0.0}
+        )
+
+        {team,
+         %State.TeamState{
+           team_state
+           | current_instruction: %{x: 0.0, y: 0.0},
+             current_cooperation_metric: 0.0
+         }}
       end)
 
     if state.aggregation_timer, do: Process.cancel_timer(state.aggregation_timer)
 
     {:noreply,
-     %{
+     %State{
        state
-       | robot_instructions: robot_instructions,
+       | team_states: team_states,
          game_state: :stopped,
          aggregation_timer: nil
      }}
@@ -233,12 +247,13 @@ defmodule RoboSoccerPlatform.GameController do
 
     if state.aggregation_timer, do: Process.cancel_timer(state.aggregation_timer)
 
-    state = %{
+    state = %State{
       state
       | game_state: :lobby,
         aggregation_timer: nil,
         room_code: generate_room_code(),
-        total_cooperation_metrics: get_default_total_cooperation_metrics(state.robot_connections)
+        team_states: reset_team_states(state.team_states),
+        number_of_aggregations: 0
     }
 
     GameDashboard.update_room(state.game_dashboard_pid, state.room_code)
@@ -267,7 +282,7 @@ defmodule RoboSoccerPlatform.GameController do
         {:noreply, state}
 
       {player_id, player_pids} ->
-        state = %{state | player_pids: player_pids}
+        state = %State{state | player_pids: player_pids}
 
         if player_id in Map.values(player_pids) do
           Logger.warning("Duplicate player, not unregistering, pid: #{inspect(player_pid)}")
@@ -280,60 +295,49 @@ defmodule RoboSoccerPlatform.GameController do
 
   @impl true
   def handle_info(:aggregate, %State{game_state: :started} = state) do
-    robot_instructions =
-      state.robot_connections
-      |> Map.new(fn {team, {robot_connection, robot_connection_module}} ->
+    team_states =
+      state.team_states
+      |> Map.new(fn {team, team_state} ->
         team_player_inputs =
           state.player_inputs
           |> Map.values()
           |> Enum.filter(&(&1.player.team == team))
 
-        %{x: aggregated_x, y: aggregated_y} =
+        instruction =
           team_player_inputs
-          |> aggregate_player_inputs(
-            state.aggregation_function,
-            state.speed_coefficient
-          )
+          |> aggregate_player_inputs(state.aggregation_function, state.speed_coefficient)
 
         current_cooperation_metric =
           team_player_inputs
           |> calculate_cooperation_metric(
-            aggregated_x,
-            aggregated_y / state.speed_coefficient,
+            instruction.x,
+            instruction.y / state.speed_coefficient,
             state.cooperation_metric_function
           )
 
-        robot_connection_module.send_instruction(robot_connection, %{
-          x: aggregated_x,
-          y: aggregated_y
-        })
+        team_state.robot_connection_module.send_instruction(
+          team_state.robot_connection,
+          instruction
+        )
 
-        {
-          team,
-          %{
-            x: aggregated_x,
-            y: aggregated_y,
-            current_cooperation_metric: current_cooperation_metric
-          }
+        total_cooperation_metric =
+          team_state.total_cooperation_metric + current_cooperation_metric
+
+        team_state = %State.TeamState{
+          team_state
+          | current_instruction: instruction,
+            current_cooperation_metric: current_cooperation_metric,
+            total_cooperation_metric: total_cooperation_metric
         }
+
+        {team, team_state}
       end)
 
-    total_cooperation_metrics =
-      Map.merge(robot_instructions, state.total_cooperation_metrics, fn _k,
-                                                                        %{
-                                                                          current_cooperation_metric:
-                                                                            current_cooperation_metric
-                                                                        },
-                                                                        total_cooperation_metric ->
-        total_cooperation_metric + current_cooperation_metric
-      end)
-      |> Map.update(:number_of_measurements, 0, &(&1 + 1))
-
-    state = %{
+    state = %State{
       state
-      | robot_instructions: robot_instructions,
-        total_cooperation_metrics: total_cooperation_metrics,
-        aggregation_timer: start_aggregation_timer(state.aggregation_interval_ms)
+      | team_states: team_states,
+        aggregation_timer: start_aggregation_timer(state.aggregation_interval_ms),
+        number_of_aggregations: state.number_of_aggregations + 1
     }
 
     update_dashboard_steering_state(state)
@@ -358,26 +362,20 @@ defmodule RoboSoccerPlatform.GameController do
     cooperation_metric_function_name = opts[:cooperation_metric_function_name]
     speed_coefficient = opts[:speed_coefficient]
 
-    robot_connections =
+    team_states =
       opts
       |> Keyword.fetch!(:robot_configs)
       |> Map.new(fn {team, {robot_connection_module, robot_connection_config}} ->
-        case robot_connection_module.start(team, robot_connection_config) do
-          {:ok, pid} ->
-            Logger.info("Started RobotConnection for team #{team} with pid #{inspect(pid)}")
-            {team, {pid, robot_connection_module}}
+        {:ok, pid} = robot_connection_module.start(team, robot_connection_config)
+        Logger.info("Started RobotConnection for team #{team} with pid #{inspect(pid)}")
 
-          {:error, reason} ->
-            raise "Failed starting RobotConnection for team #{team}, reason: #{reason}"
-        end
+        team_state = %State.TeamState{
+          robot_connection: pid,
+          robot_connection_module: robot_connection_module
+        }
+
+        {team, team_state}
       end)
-
-    robot_instructions =
-      Map.new(robot_connections, fn {team, _robot_connection} ->
-        {team, %{x: 0.0, y: 0.0, current_cooperation_metric: 0.0}}
-      end)
-
-    total_cooperation_metrics = get_default_total_cooperation_metrics(robot_connections)
 
     aggregation_function =
       if {aggregation_function_name, 1} in AggregationFunctions.__info__(:functions) do
@@ -394,10 +392,7 @@ defmodule RoboSoccerPlatform.GameController do
       end
 
     %State{
-      robot_instructions: robot_instructions,
-      team_states: %{},
-      total_cooperation_metrics: total_cooperation_metrics,
-      robot_connections: robot_connections,
+      team_states: team_states,
       aggregation_interval_ms: aggregation_interval_ms,
       speed_coefficient: speed_coefficient,
       room_code: generate_room_code(),
@@ -447,8 +442,7 @@ defmodule RoboSoccerPlatform.GameController do
   defp update_dashboard_steering_state(state) do
     GameDashboard.update_steering_state(state.game_dashboard_pid, %{
       player_inputs: state.player_inputs,
-      robot_instructions: state.robot_instructions,
-      total_cooperation_metrics: state.total_cooperation_metrics
+      team_states: state.team_states
     })
   end
 
@@ -470,16 +464,23 @@ defmodule RoboSoccerPlatform.GameController do
       state.game_dashboard_pid,
       %{
         player_inputs: player_inputs,
-        robot_instructions: state.robot_instructions,
-        total_cooperation_metrics: state.total_cooperation_metrics
+        team_states: state.team_states
       }
     )
 
-    %{state | player_inputs: player_inputs}
+    %State{state | player_inputs: player_inputs}
   end
 
   @spec generate_room_code() :: String.t()
   defp generate_room_code() do
     Enum.random(1000..9999) |> to_string
+  end
+
+  @spec reset_team_states(%{RoboSoccerPlatform.team() => State.TeamState.t()}) ::
+          %{RoboSoccerPlatform.team() => State.TeamState.t()}
+  defp reset_team_states(team_states) do
+    Map.new(team_states, fn {team, team_state} ->
+      {team, %State.TeamState{team_state | total_cooperation_metric: 0.0}}
+    end)
   end
 end

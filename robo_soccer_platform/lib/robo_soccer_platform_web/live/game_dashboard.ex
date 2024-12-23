@@ -14,12 +14,17 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
           player_inputs: %{
             (player_id :: String.t()) => RoboSoccerPlatform.GameController.player_input()
           },
-          robot_instructions: %{RoboSoccerPlatform.team() => %{x: float(), y: float(), current_cooperation_metric: float()}}
+          team_states: %{
+            RoboSoccerPlatform.team() => RoboSoccerPlatform.GameController.State.TeamState.t()
+          },
+          number_of_aggregations: non_neg_integer()
         }
   @type teams :: %{
           RoboSoccerPlatform.team() => %{
             player_inputs: [RoboSoccerPlatform.GameController.player_input()],
-            robot_instruction: %{x: float(), y: float()},
+            current_instruction: %{x: float(), y: float()},
+            current_cooperation_metric: float(),
+            total_cooperation_metric: float(),
             goals: non_neg_integer()
           }
         }
@@ -44,17 +49,24 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
     wifi_qr_svg = render_wifi_qr_code(config[:wifi_ssid], config[:wifi_psk])
     player_url_qr_svg = render_player_url_qr_code(config[:ip], config[:port], room_code)
 
+    timer =
+      if game_state == :started do
+        Process.send_after(self(), :tick, 1000)
+      else
+        nil
+      end
+
     socket
     |> assign(config)
     |> assign(room_code: room_code)
     |> assign(wifi_qr_svg: wifi_qr_svg)
     |> assign(player_url_qr_svg: player_url_qr_svg)
     |> assign(teams: init_teams(steering_state))
+    |> assign(number_of_aggregations: steering_state.number_of_aggregations)
     |> assign(game_state: game_state)
     |> assign(seconds_left: @game_length)
-    |> assign(timer: nil)
+    |> assign(timer: timer)
     |> assign(stats_visible: false)
-    |> assign(total_cooperation_metrics: %{"green" => 1.0, "red" => 1.0, number_of_measurements: 0})
     |> then(&{:ok, &1})
   end
 
@@ -67,7 +79,7 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
       show
       on_cancel={JS.push("close_stats")}
       teams={@teams}
-      total_cooperation_metrics={@total_cooperation_metrics}
+      number_of_aggregations={@number_of_aggregations}
     />
 
     <div class="flex flex-col h-[80vh] gap-8">
@@ -183,7 +195,9 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
     RoboSoccerPlatform.GameController.reset_stats()
 
     socket
-    |> assign(total_cooperation_metrics: %{"green" => 1.0, "red" => 1.0, number_of_measurements: 0})
+    |> assign(
+      total_cooperation_metrics: %{"green" => 1.0, "red" => 1.0, number_of_measurements: 0}
+    )
     |> then(&{:noreply, &1})
   end
 
@@ -229,7 +243,9 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
     wifi_string = "WIFI:S:#{wifi_ssid};T:WPA;P:#{wifi_psk};;"
 
     if String.length(wifi_string) > 53 do
-      Logger.warning("Please use wifi name + password shorter than 36 for nicer qr code rendering")
+      Logger.warning(
+        "Please use wifi name + password shorter than 36 for nicer qr code rendering"
+      )
     end
 
     wifi_string |> String.pad_trailing(33) |> render_qr_code()
@@ -259,8 +275,8 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
 
   @spec update_teams(teams(), steering_state()) :: teams()
   defp update_teams(teams, steering_state) do
-    steering_state.robot_instructions
-    |> Map.new(fn {team, robot_instruction} ->
+    steering_state.team_states
+    |> Map.new(fn {team, team_state} ->
       team_player_inputs =
         steering_state.player_inputs
         |> Map.values()
@@ -270,7 +286,9 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
         team,
         %{
           player_inputs: team_player_inputs,
-          robot_instruction: robot_instruction,
+          current_instruction: team_state.current_instruction,
+          current_cooperation_metric: team_state.current_cooperation_metric,
+          total_cooperation_metric: team_state.total_cooperation_metric,
           goals: get_in(teams, [team, :goals]) || 0
         }
       }
