@@ -224,10 +224,12 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
 
   @spec render_qr_code(String.t()) :: Phoenix.HTML.safe()
   defp render_qr_code(string) do
+    svg_settings = %QRCode.Render.SvgSettings{scale: 18}
+
     {:ok, qr} =
       string
       |> QRCode.create()
-      |> QRCode.render()
+      |> QRCode.render(:svg, svg_settings)
 
     Phoenix.HTML.raw(qr)
   end
