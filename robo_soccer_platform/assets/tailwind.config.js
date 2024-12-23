@@ -15,12 +15,15 @@ module.exports = {
     extend: {
       colors: {
         brand: "#FD4F00",
-        "sky-blue": "#A8F9FF",
-        "light-orange": "#FFAE63",
         "light-green": "#00FF1A",
         "dark-green": "#008A0E",
         "light-red": "#FF3737",
         "dark-red": "#C40000",
+        "palette-500": "#000000",
+        "palette-400": "#23252f",
+        "palette-300": "#6d6f7b",
+        "palette-200": "#b8c0d5",
+        "palette-100": "#f2f0f6"
       }
     },
   },

@@ -4,7 +4,7 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
   use RoboSoccerPlatformWeb, :live_view
 
   import RoboSoccerPlatformWeb.GameDashboard.Components,
-    only: [before_game_view: 1, in_game_view: 1]
+    only: [before_game_view: 1, in_game_view: 1, cooperation_metrics: 1]
 
   alias RoboSoccerPlatformWeb.Endpoint
 
@@ -13,7 +13,7 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
           player_inputs: %{
             (player_id :: String.t()) => RoboSoccerPlatform.GameController.player_input()
           },
-          robot_instructions: %{RoboSoccerPlatform.team() => %{x: float(), y: float()}}
+          robot_instructions: %{RoboSoccerPlatform.team() => %{x: float(), y: float(), current_cooperation_metric: float()}}
         }
   @type teams :: %{
           RoboSoccerPlatform.team() => %{
@@ -28,9 +28,9 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
     GenServer.cast(game_dashboard_pid, {:update_steering_state, steering_state})
   end
 
-  @spec update_room_code(pid(), String.t()) :: :ok
-  def update_room_code(game_dashoard_pid, room_code) do
-    GenServer.cast(game_dashoard_pid, {:update_room_code, room_code})
+  @spec update_room(pid(), String.t()) :: :ok
+  def update_room(game_dashoard_pid, room_code) do
+    GenServer.cast(game_dashoard_pid, {:update_room, room_code})
   end
 
   @impl true
@@ -52,12 +52,21 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
     |> assign(game_state: game_state)
     |> assign(seconds_left: 10 * 60)
     |> assign(timer: nil)
+    |> assign(stats_visible: false)
+    |> assign(total_cooperation_metrics: %{"green" => 0.0, "red" => 0.0})
     |> then(&{:ok, &1})
   end
 
   @impl true
   def render(assigns) do
     ~H"""
+    <.modal :if={@stats_visible} id="my-modal" show on_cancel={JS.push("close_stats")}>
+      <div class="flex text-2xl">
+        Łączny poziom rozbieżnych decyzji
+      </div>
+      <.cooperation_metrics red_cooperation_metric={@total_cooperation_metrics["red"]} green_cooperation_metric={@total_cooperation_metrics["green"]} />
+    </.modal>
+
     <div class="flex flex-col h-[80vh] gap-8">
       <.before_game_view
         :if={@game_state == :lobby}
@@ -96,9 +105,10 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
   end
 
   @impl true
-  def handle_cast({:update_room_code, room_code}, socket) do
+  def handle_cast({:update_room, room_code}, socket) do
     socket
     |> assign(room_code: room_code)
+    |> assign(seconds_left: 10 * 60)
     |> then(&{:noreply, &1})
   end
 
@@ -150,6 +160,20 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
     socket
     |> assign(game_state: :lobby)
     |> then(&{:noreply, &1})
+  end
+
+  @impl true
+  def handle_event("show_stats", _params, socket) do
+    total_cooperation_metrics = RoboSoccerPlatform.GameController.get_total_cooperation_metrics()
+
+    socket
+    |> assign(total_cooperation_metrics: total_cooperation_metrics)
+    |> assign(stats_visible: true)
+    |> then(&{:noreply, &1})
+  end
+
+  def handle_event("close_stats", _params, socket) do
+    {:noreply, assign(socket, stats_visible: false)}
   end
 
   @impl true
