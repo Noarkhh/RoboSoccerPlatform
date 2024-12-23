@@ -72,13 +72,24 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
 
     ~H"""
     <div class="flex flex-col flex-1 gap-2">
-      <div class="ml-auto">
-        <.time_left seconds={@seconds_left} />
-      </div>
       <div class="grid grid-flow-col auto-cols-fr w-full gap-2">
         <div class="flex flex-col flex-1 gap-4">
           <.cooperation_metrics red_cooperation_metric={@red_cooperation_metric} green_cooperation_metric={@green_cooperation_metric} />
-          <.directions_and_score red_direction={@red_direction} green_direction={@green_direction} red_goals={@teams["red"].goals} green_goals={@teams["green"].goals} />
+
+          <div class="flex gap-8">
+            <.time_left
+              seconds={@seconds_left}
+              class="flex items-center"
+            />
+            <.directions_and_score
+              red_direction={@red_direction}
+              green_direction={@green_direction}
+              red_goals={@teams["red"].goals}
+              green_goals={@teams["green"].goals}
+              class="flex flex-1"
+            />
+          </div>
+
           <.teams
             red_players={@teams["red"].player_inputs}
             green_players={@teams["green"].player_inputs}
@@ -224,6 +235,7 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
   end
 
   attr :seconds, :integer, required: true
+  attr :class, :string, default: ""
 
   defp time_left(assigns) do
     minutes =
@@ -242,7 +254,7 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
       |> assign(seconds: seconds)
 
     ~H"""
-    <div class="bg-palette-400 px-16 py-2 text-3xl text-palette-100 border border-solid border-black rounded-3xl">
+    <div class={"bg-palette-400 px-8 py-2 text-5xl text-palette-100 border border-solid border-black rounded-3xl #{@class}"}>
       <%= @minutes %>:<%= @seconds %>
     </div>
     """
@@ -252,31 +264,30 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
   attr :green_direction, :string, required: true
   attr :red_goals, :integer, default: 0
   attr :green_goals, :integer, default: 0
+  attr :class, :string, default: ""
 
   defp directions_and_score(assigns) do
     ~H"""
-    <div class="bg-palette-400 px-4 py-2 text-3xl border border-solid border-black rounded-3xl">
-      <div class="flex min-w-0">
-        <div class="flex-1 bg-gradient-to-r from-light-red to-palette-400 p-4 rounded-l-3xl"></div>
+    <div class={"bg-palette-400 px-4 py-2 border border-solid border-black rounded-3xl min-w-0 #{@class}"}>
+      <div class="flex-1 bg-gradient-to-r from-light-red to-palette-400 p-4 rounded-l-3xl"></div>
 
-        <div class="flex-1 p-4 flex items-center justify-center text-3xl whitespace-nowrap">
-          <span class="material-icons-outlined text-light-red">
-            <%= @red_direction %>
-          </span>
-        </div>
-
-        <div class="flex-1 p-4 flex items-center justify-center text-3xl whitespace-nowrap text-palette-100">
-          <%= @red_goals %> : <%= @green_goals %>
-        </div>
-
-        <div class="flex-1 p-4 flex items-center justify-center text-3xl whitespace-nowrap">
-          <span class="material-icons-outlined text-light-green">
-            <%= @green_direction %>
-          </span>
-        </div>
-
-        <div class="flex-1 bg-gradient-to-l from-light-green to-palette-400 p-4 rounded-r-3xl"></div>
+      <div class="flex-1 p-4 flex items-center justify-center whitespace-nowrap">
+        <span class="material-icons-outlined text-light-red !text-5xl">
+          <%= @red_direction %>
+        </span>
       </div>
+
+      <div class="flex-1 p-4 flex items-center justify-center text-5xl whitespace-nowrap text-palette-100">
+        <%= @red_goals %> : <%= @green_goals %>
+      </div>
+
+      <div class="flex-1 p-4 flex items-center justify-center whitespace-nowrap">
+        <span class="material-icons-outlined text-light-green !text-5xl">
+          <%= @green_direction %>
+        </span>
+      </div>
+
+      <div class="flex-1 bg-gradient-to-l from-light-green to-palette-400 p-4 rounded-r-3xl"></div>
     </div>
     """
   end
@@ -291,15 +302,15 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
       |> assign(green_cooperation_metric: Float.round(assigns.green_cooperation_metric, 2))
 
     ~H"""
-    <div class="bg-palette-400 px-4 py-2 text-3xl border border-solid border-black rounded-3xl">
+    <div class="bg-palette-400 px-4 py-2 border border-solid border-black rounded-3xl">
       <div class="flex min-w-0">
         <div class="flex-1 bg-gradient-to-r from-light-red to-palette-400 p-4 rounded-l-3xl"></div>
 
-        <div class="flex-1 p-4 flex items-center justify-center text-3xl whitespace-nowrap text-palette-100">
+        <div class="flex-1 p-4 flex items-center justify-center text-5xl whitespace-nowrap text-palette-100">
           <%= @red_cooperation_metric %>
         </div>
 
-        <div class="flex-1 p-4 flex items-center justify-center text-3xl whitespace-nowrap text-palette-100">
+        <div class="flex-1 p-4 flex items-center justify-center text-5xl whitespace-nowrap text-palette-100">
           <%= @green_cooperation_metric %>
         </div>
 
