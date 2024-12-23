@@ -173,7 +173,7 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
   end
 
   def handle_event("close_stats", _params, socket) do
-    {:noreply, assign(socket, :stats_visible, false)}
+    {:noreply, assign(socket, stats_visible: false)}
   end
 
   @impl true

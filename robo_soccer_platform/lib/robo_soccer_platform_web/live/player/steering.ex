@@ -80,7 +80,7 @@ defmodule RoboSoccerPlatformWeb.Player.Steering do
       </div>
 
       <div :if={@game_state == :stopped} class="absolute left-0 top-0 right-0 bottom-0 bg-red-600">
-        <img src="/images/stop.png" alt="stop" class="p-8 mx-auto mt-24">
+        <img src="/images/stop.svg" alt="stop" class="p-8 mx-auto mt-24">
       </div>
     </div>
     """

@@ -64,7 +64,7 @@ defmodule RoboSoccerPlatform.GameController do
     GenServer.call(:game_controller, :get_game_state)
   end
 
-  @spec get_total_cooperation_metrics() :: float()
+  @spec get_total_cooperation_metrics() :: %{RoboSoccerPlatform.team() => float()}
   def get_total_cooperation_metrics() do
     GenServer.call(:game_controller, :get_total_cooperation_metrics)
   end

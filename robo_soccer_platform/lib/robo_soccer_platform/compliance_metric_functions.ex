@@ -9,9 +9,10 @@ defmodule RoboSoccerPlatform.CooperationMetricFunctions do
   def euclidean_distance([_player_input], _, _), do: 0.0
   def euclidean_distance(player_inputs, aggregated_x, aggregated_y) do
     player_inputs
-    |> Enum.reduce(0.0, fn %{x: x, y: y}, acc ->
-      acc + :math.sqrt(:math.pow(x - aggregated_x, 2) + :math.pow(y - aggregated_y, 2))
+    |> Enum.map(fn %{x: x, y: y} ->
+      :math.sqrt(:math.pow(x - aggregated_x, 2) + :math.pow(y - aggregated_y, 2))
     end)
+    |> Enum.sum()
     |> Kernel./(length(player_inputs))
     |> Kernel./(:math.sqrt(2))
   end
