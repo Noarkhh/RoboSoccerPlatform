@@ -56,6 +56,7 @@ defmodule RoboSoccerPlatform.MixProject do
       {:elixir_uuid, "~> 1.2"},
       {:bunch, "~> 1.6"},
       {:qr_code, "~> 3.1.0"},
+      {:circuits_uart, "~> 1.5.3"},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:dialyxir, ">= 0.0.0", only: :dev, runtime: false},
       {:credo, ">= 0.0.0", only: :dev, runtime: false}
