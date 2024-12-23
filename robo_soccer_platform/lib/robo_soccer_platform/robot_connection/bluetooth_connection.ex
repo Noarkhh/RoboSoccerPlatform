@@ -45,20 +45,23 @@ defmodule RoboSoccerPlatform.RobotConnection.BluetoothConnection do
       active: true
     )
 
+    IO.inspect("connected")
+
     {:noreply, state}
   end
 
   @impl true
   def handle_cast({:send_instruction, instruction}, state) do
     command = create_wheels_speeds_command(instruction)
+    IO.inspect(command, label: "sending")
     :ok = Circuits.UART.write(state.uart_gen_server, command)
     {:noreply, state}
   end
 
   @spec create_wheels_speeds_command(%{x: float(), y: float()}) :: String.t()
   defp create_wheels_speeds_command(%{x: x, y: y}) do
-    left_wheel_speed = x * 50 + y * 50
-    right_wheel_speed = x * 50 - y * 50
-    "[=#{trunc(left_wheel_speed)},#{trunc(right_wheel_speed)}"
+    left_wheel_speed = y * 200 + x * 25
+    right_wheel_speed = y * 200 - x * 25
+    "[=#{trunc(left_wheel_speed)},#{trunc(right_wheel_speed)}]"
   end
 end
