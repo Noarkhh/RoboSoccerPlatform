@@ -75,6 +75,11 @@ defmodule RoboSoccerPlatform.GameController do
     GenServer.call(:game_controller, {:init_game_dashboard, game_dashboard_pid})
   end
 
+  @spec reset_stats() :: :ok
+  def reset_stats() do
+    GenServer.cast(:game_controller, :reset_stats)
+  end
+
   @spec register_player(Player.t(), pid()) :: :ok
   def register_player(player, player_pid) do
     GenServer.cast(:game_controller, {:register_player, player, player_pid})
@@ -117,6 +122,11 @@ defmodule RoboSoccerPlatform.GameController do
 
     {:reply, {state.room_code, steering_state, state.game_state},
      %{state | game_dashboard_pid: game_dashboard_pid}}
+  end
+
+  @impl true
+  def handle_cast(:reset_stats, state) do
+    {:noreply, %{state | total_cooperation_metrics: get_default_total_cooperation_metrics(state.robot_connections)}}
   end
 
   @impl true

@@ -147,6 +147,10 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
       <.button phx-click="show_stats" class="bg-palette-400 !text-palette-100 !text-4xl hover:bg-palette-500">
         STATYSTYKI
       </.button>
+
+      <.button phx-click="reset_stats" class="bg-palette-100 !text-palette-400 !text-4xl hover:bg-palette-300">
+        ZRESETUJ STATYSTYKI
+      </.button>
     </div>
     """
   end
@@ -162,8 +166,18 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
       assigns
       |> assign(green_current_cooperation_metric: assigns.teams["green"].robot_instruction.current_cooperation_metric)
       |> assign(red_current_cooperation_metric: assigns.teams["red"].robot_instruction.current_cooperation_metric)
-      |> assign(green_total_cooperation_metric: assigns.total_cooperation_metrics["green"] / assigns.total_cooperation_metrics.number_of_measurements)
-      |> assign(red_total_cooperation_metric: assigns.total_cooperation_metrics["red"] / assigns.total_cooperation_metrics.number_of_measurements)
+      |> assign(green_total_cooperation_metric:
+        average_cooperation_metrics(
+          assigns.total_cooperation_metrics["green"],
+          assigns.total_cooperation_metrics.number_of_measurements
+        )
+      )
+      |> assign(red_total_cooperation_metric:
+        average_cooperation_metrics(
+          assigns.total_cooperation_metrics["red"],
+          assigns.total_cooperation_metrics.number_of_measurements
+        )
+      )
 
     ~H"""
     <.modal id={@id} show on_cancel={@on_cancel} class="bg-palette-100" container_class="flex flex-col gap-4">
@@ -178,6 +192,12 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
       <.cooperation_metrics red_cooperation_metric={@red_total_cooperation_metric} green_cooperation_metric={@green_total_cooperation_metric} />
     </.modal>
     """
+  end
+
+  @spec average_cooperation_metrics(float(), integer()) :: float()
+  defp average_cooperation_metrics(total_coop, 0), do: 0.00
+  defp average_cooperation_metrics(total_coop, number_of_measures) do
+    total_coop / number_of_measures
   end
 
   attr :red_players, :list, required: true

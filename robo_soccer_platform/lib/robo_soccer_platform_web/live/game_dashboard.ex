@@ -53,7 +53,7 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
     |> assign(seconds_left: 10 * 60)
     |> assign(timer: nil)
     |> assign(stats_visible: false)
-    |> assign(total_cooperation_metrics: %{"green" => 0.0, "red" => 0.0, number_of_measurements: 0})
+    |> assign(total_cooperation_metrics: %{"green" => 1.0, "red" => 1.0, number_of_measurements: 0})
     |> then(&{:ok, &1})
   end
 
@@ -172,10 +172,21 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
     |> then(&{:noreply, &1})
   end
 
+  @impl true
   def handle_event("close_stats", _params, socket) do
     {:noreply, assign(socket, stats_visible: false)}
   end
 
+  @impl true
+  def handle_event("reset_stats", _params, socket) do
+    RoboSoccerPlatform.GameController.reset_stats()
+
+    socket
+    |> assign(total_cooperation_metrics: %{"green" => 1.0, "red" => 1.0, number_of_measurements: 0})
+    |> then(&{:noreply, &1})
+  end
+
+  @impl true
   def handle_event("kick", %{"player_id" => player_id}, socket) do
     Endpoint.broadcast_from(self(), @game_state, "kick", %{player_id: player_id})
 
