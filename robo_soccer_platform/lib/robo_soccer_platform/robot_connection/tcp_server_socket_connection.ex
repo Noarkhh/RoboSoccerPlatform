@@ -31,7 +31,6 @@ defmodule RoboSoccerPlatform.RobotConnection.TCPServerSocketConnection do
 
   @impl true
   def init({team, local_port}) do
-    IO.inspect(local_port)
     {:ok, listening_socket} = :gen_tcp.listen(local_port, mode: :binary, reuseaddr: true)
 
     state = %State{
@@ -45,9 +44,9 @@ defmodule RoboSoccerPlatform.RobotConnection.TCPServerSocketConnection do
 
   @impl true
   def handle_continue(:initialize_connection, state) do
-    {:ok, {_socket_address, socket_port}} = :inet.sockname(state.listening_socket)
-
-    Logger.info("Connection process listening for #{state.team} robot on port #{socket_port}")
+    Logger.info(
+      "Connection process listening for #{state.team} robot on port #{state.local_port}"
+    )
 
     {:ok, connected_socket} = :gen_tcp.accept(state.listening_socket)
 
