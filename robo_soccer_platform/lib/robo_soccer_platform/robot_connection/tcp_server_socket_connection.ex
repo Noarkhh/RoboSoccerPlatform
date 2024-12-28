@@ -45,12 +45,12 @@ defmodule RoboSoccerPlatform.RobotConnection.TCPServerSocketConnection do
   @impl true
   def handle_continue(:initialize_connection, state) do
     Logger.info(
-      "Connection process listening for #{state.team} robot on port #{state.local_port}"
+      "TCP connection process listening for #{state.team} robot on port #{state.local_port}"
     )
 
     {:ok, connected_socket} = :gen_tcp.accept(state.listening_socket)
 
-    Logger.info("Connection with #{state.team} robot established")
+    Logger.info("TCP connection with #{state.team} robot established")
 
     {:noreply, %State{state | socket: connected_socket}}
   end
@@ -65,7 +65,7 @@ defmodule RoboSoccerPlatform.RobotConnection.TCPServerSocketConnection do
         {:noreply, state}
 
       {:error, :closed} ->
-        Logger.warning("Connection with #{state.team} robot severed, retrying")
+        Logger.warning("TCP connection with #{state.team} robot severed, retrying")
         {:noreply, state, {:continue, :initialize_connection}}
     end
   end
@@ -82,14 +82,14 @@ defmodule RoboSoccerPlatform.RobotConnection.TCPServerSocketConnection do
 
   @impl true
   def handle_info({:tcp_closed, socket}, %{socket: socket} = state) do
-    Logger.warning("Connection with #{state.team} robot severed, retrying")
+    Logger.warning("TCP connection with #{state.team} robot severed, retrying")
     {:noreply, state, {:continue, :initialize_connection}}
   end
 
   @impl true
   def handle_info({:tcp_error, socket, error}, %{socket: socket} = state) do
     Logger.warning(
-      "connection with #{state.team} robot severed with error #{inspect(error)}, retrying"
+      "TCP connection with #{state.team} robot severed with error #{inspect(error)}, retrying"
     )
 
     {:noreply, state, {:continue, :initialize_connection}}
