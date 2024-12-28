@@ -170,8 +170,8 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
     """
   end
 
-  attr :total_cooperation_metrics, :map, required: true
   attr :teams, :map, required: true
+  attr :number_of_aggregations, :integer, required: true
   attr :id, :string, required: true
   attr :show, :boolean, default: false
   attr :on_cancel, JS, default: %JS{}
@@ -186,14 +186,14 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
       |> assign(
         green_total_cooperation_metric:
           average_cooperation_metrics(
-            assigns.teams["green"].total_cooperation_metrics,
+            assigns.teams["green"].total_cooperation_metric,
             assigns.number_of_aggregations
           )
       )
       |> assign(
         red_total_cooperation_metric:
           average_cooperation_metrics(
-            assigns.teams["red"].total_cooperation_metrics,
+            assigns.teams["red"].total_cooperation_metric,
             assigns.number_of_aggregations
           )
       )
