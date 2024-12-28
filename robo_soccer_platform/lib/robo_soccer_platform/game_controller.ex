@@ -79,18 +79,14 @@ defmodule RoboSoccerPlatform.GameController do
                   player_pids: %{},
                   game_state: :lobby,
                   aggregation_timer: nil,
-                  game_dashboard_pid: nil
+                  game_dashboard_pid: nil,
+                  number_of_aggregations: 0
                 ]
   end
 
   @spec get_game_state() :: game_state()
   def get_game_state() do
     GenServer.call(:game_controller, :get_game_state)
-  end
-
-  @spec get_total_cooperation_metrics() :: %{RoboSoccerPlatform.team() => float()}
-  def get_total_cooperation_metrics() do
-    GenServer.call(:game_controller, :get_total_cooperation_metrics)
   end
 
   @spec room_code_correct?(String.t()) :: boolean()
@@ -138,16 +134,6 @@ defmodule RoboSoccerPlatform.GameController do
   end
 
   @impl true
-  def handle_call(:get_total_cooperation_metrics, _from, state) do
-    total_cooperation_metrics =
-      Map.new(state.team_states, fn {team, team_state} ->
-        {team, team_state.total_cooperation_metrics}
-      end)
-
-    {:reply, total_cooperation_metrics, state}
-  end
-
-  @impl true
   def handle_call({:room_code_correct?, room_code}, _from, state) do
     {:reply, state.room_code == room_code, state}
   end
@@ -156,7 +142,8 @@ defmodule RoboSoccerPlatform.GameController do
   def handle_call({:init_game_dashboard, game_dashboard_pid}, _from, state) do
     steering_state = %{
       player_inputs: state.player_inputs,
-      team_states: state.team_states
+      team_states: state.team_states,
+      number_of_aggregations: state.number_of_aggregations
     }
 
     {:reply, {state.room_code, steering_state, state.game_state},
@@ -166,9 +153,10 @@ defmodule RoboSoccerPlatform.GameController do
   @impl true
   def handle_cast(:reset_stats, state) do
     {:noreply,
-     %{
+     %State{
        state
-       | total_cooperation_metrics: get_default_total_cooperation_metrics(state.robot_connections)
+       | team_states: reset_team_states(state.team_states),
+         number_of_aggregations: 0
      }}
   end
 
@@ -401,14 +389,6 @@ defmodule RoboSoccerPlatform.GameController do
     }
   end
 
-  @spec get_default_total_cooperation_metrics(%{RoboSoccerPlatform.team() => pid()}) ::
-          %{RoboSoccerPlatform.team() => float(), number_of_measurements: integer()}
-  defp get_default_total_cooperation_metrics(robot_connections) do
-    robot_connections
-    |> Map.new(fn {team, _robot_connection} -> {team, 0.0} end)
-    |> Map.put(:number_of_measurements, 0)
-  end
-
   @spec aggregate_player_inputs([player_input()], AggregationFunctions.signature(), float()) ::
           %{x: float(), y: float()}
   defp aggregate_player_inputs(player_inputs, aggregation_function, speed_coefficient) do
@@ -442,7 +422,8 @@ defmodule RoboSoccerPlatform.GameController do
   defp update_dashboard_steering_state(state) do
     GameDashboard.update_steering_state(state.game_dashboard_pid, %{
       player_inputs: state.player_inputs,
-      team_states: state.team_states
+      team_states: state.team_states,
+      number_of_aggregations: state.number_of_aggregations
     })
   end
 
@@ -464,7 +445,8 @@ defmodule RoboSoccerPlatform.GameController do
       state.game_dashboard_pid,
       %{
         player_inputs: player_inputs,
-        team_states: state.team_states
+        team_states: state.team_states,
+        number_of_aggregations: state.number_of_aggregations
       }
     )
 

@@ -116,7 +116,7 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
   def handle_cast({:update_steering_state, steering_state}, socket) do
     socket
     |> assign(teams: update_teams(socket.assigns.teams, steering_state))
-    |> assign(total_cooperation_metrics: steering_state.total_cooperation_metrics)
+    |> assign(number_of_aggregations: steering_state.number_of_aggregations)
     |> then(&{:noreply, &1})
   end
 
@@ -193,12 +193,7 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
   @impl true
   def handle_event("reset_stats", _params, socket) do
     RoboSoccerPlatform.GameController.reset_stats()
-
-    socket
-    |> assign(
-      total_cooperation_metrics: %{"green" => 1.0, "red" => 1.0, number_of_measurements: 0}
-    )
-    |> then(&{:noreply, &1})
+    {:noreply, socket}
   end
 
   @impl true
