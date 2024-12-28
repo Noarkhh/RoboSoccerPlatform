@@ -68,7 +68,7 @@ defmodule RoboSoccerPlatform.RobotConnection.BluetoothConnection do
 
     case Circuits.UART.write(state.uart_gen_server, command) do
       :ok ->
-        {:noreply, state}
+        :ok
 
       {:error, :ebadf} ->
         Logger.warning(
@@ -101,7 +101,7 @@ defmodule RoboSoccerPlatform.RobotConnection.BluetoothConnection do
 
   @impl true
   def handle_info(:initialize_connection, state) do
-    {:ok, state, {:continue, :initialize_connection}}
+    {:noreply, state, {:continue, :initialize_connection}}
   end
 
   @impl true
