@@ -9,6 +9,7 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
   alias RoboSoccerPlatformWeb.Endpoint
 
   @game_state "game_state"
+  @game_length 100 * 60
   @type steering_state :: %{
           player_inputs: %{
             (player_id :: String.t()) => RoboSoccerPlatform.GameController.player_input()
@@ -50,7 +51,7 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
     |> assign(player_url_qr_svg: player_url_qr_svg)
     |> assign(teams: init_teams(steering_state))
     |> assign(game_state: game_state)
-    |> assign(seconds_left: 10 * 60)
+    |> assign(seconds_left: @game_length)
     |> assign(timer: nil)
     |> assign(stats_visible: false)
     |> assign(total_cooperation_metrics: %{"green" => 1.0, "red" => 1.0, number_of_measurements: 0})
@@ -111,7 +112,7 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
   def handle_cast({:update_room, room_code}, socket) do
     socket
     |> assign(room_code: room_code)
-    |> assign(seconds_left: 10 * 60)
+    |> assign(seconds_left: @game_length)
     |> then(&{:noreply, &1})
   end
 
@@ -211,7 +212,7 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
 
       socket
       |> assign(game_state: :stopped)
-      |> assign(seconds_left: 10 * 60)
+      |> assign(seconds_left: @game_length)
       |> then(&{:noreply, &1})
     end
   end

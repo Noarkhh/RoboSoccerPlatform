@@ -77,10 +77,7 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
           <.cooperation_metrics red_cooperation_metric={@red_cooperation_metric} green_cooperation_metric={@green_cooperation_metric} />
 
           <div class="flex gap-8">
-            <.time_left
-              seconds={@seconds_left}
-              class="flex items-center"
-            />
+            <.time_left seconds={@seconds_left} />
             <.directions_and_score
               red_direction={@red_direction}
               green_direction={@green_direction}
@@ -195,7 +192,7 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
   end
 
   @spec average_cooperation_metrics(float(), integer()) :: float()
-  defp average_cooperation_metrics(total_coop, 0), do: 0.00
+  defp average_cooperation_metrics(_total_coop, 0), do: 0.00
   defp average_cooperation_metrics(total_coop, number_of_measures) do
     total_coop / number_of_measures
   end
@@ -314,7 +311,7 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
       |> assign(seconds: seconds)
 
     ~H"""
-    <div class={"bg-palette-400 px-8 py-2 text-5xl text-palette-100 border border-solid border-black rounded-3xl #{@class}"}>
+    <div class={"w-40 min-w-40 max-w-40 bg-palette-400 text-5xl text-palette-100 border border-solid border-black rounded-3xl m-auto py-4 text-center"}>
       <%= @minutes %>:<%= @seconds %>
     </div>
     """
@@ -388,7 +385,7 @@ defmodule RoboSoccerPlatformWeb.GameDashboard.Components do
     """
   end
 
-  @spec float_to_string_percent(float()) :: string()
+  @spec float_to_string_percent(float()) :: String.t()
   defp float_to_string_percent(float) do
     percent = Float.round(100 * float, 2)
 
