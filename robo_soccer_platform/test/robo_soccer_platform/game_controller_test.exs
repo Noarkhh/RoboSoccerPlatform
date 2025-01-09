@@ -1,4 +1,4 @@
-defmodule GameControllerTest do
+defmodule RoboSoccerPlatform.GameControllerTest do
   use RoboSoccerPlatformWeb.ConnCase
 
   alias RoboSoccerPlatform.GameController
