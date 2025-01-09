@@ -57,11 +57,12 @@ defmodule RoboSoccerPlatformWeb.Player.Steering do
 
     ~H"""
     <div class="flex flex-col gap-4">
-      <div class="text-3xl text-center truncate">
+      <div class="text-xl text-center truncate">
         <%= @team_display %>
       </div>
-      <div class="flex-1 truncate">
-        <div class="truncate text-center font-bold">
+
+      <div class="truncate">
+        <div class="text-3xl truncate text-center font-bold pb-4">
           <%= @player.username %>
         </div>
       </div>
@@ -118,5 +119,16 @@ defmodule RoboSoccerPlatformWeb.Player.Steering do
   @impl true
   def handle_info(%{topic: @game_state, event: "new_room"}, socket) do
     {:noreply, push_navigate(socket, to: "/player")}
+  end
+
+  @impl true
+  def handle_info(%{topic: @game_state, event: "kick", payload: %{player_id: player_id}}, socket)
+      when player_id == socket.assigns.player.id do
+    {:noreply, push_navigate(socket, to: "/player")}
+  end
+
+  @impl true
+  def handle_info(%{topic: @game_state, event: "kick"}, socket) do
+    {:noreply, socket}
   end
 end
