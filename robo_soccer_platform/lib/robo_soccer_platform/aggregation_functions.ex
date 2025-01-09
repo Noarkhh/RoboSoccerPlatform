@@ -6,8 +6,8 @@ defmodule RoboSoccerPlatform.AggregationFunctions do
     0.0
   end
 
-  def median(integers) do
-    sorted = Enum.sort(integers)
+  def median(floats) do
+    sorted = Enum.sort(floats)
     list_length = length(sorted)
 
     if rem(list_length, 2) == 1 do
@@ -22,7 +22,7 @@ defmodule RoboSoccerPlatform.AggregationFunctions do
     0.0
   end
 
-  def average(integers) do
-    Enum.sum(integers) / length(integers)
+  def average(floats) do
+    Enum.sum(floats) / length(floats)
   end
 end

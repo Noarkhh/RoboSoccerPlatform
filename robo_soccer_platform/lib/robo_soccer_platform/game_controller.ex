@@ -54,6 +54,7 @@ defmodule RoboSoccerPlatform.GameController do
     @type t :: %__MODULE__{
             aggregation_interval_ms: pos_integer(),
             cooperation_metric_function: CooperationMetricFunctions.signature(),
+            speed_coefficient: float(),
             aggregation_function: AggregationFunctions.signature(),
             number_of_aggregations: integer(),
             team_states: %{RoboSoccerPlatform.team() => TeamState.t()},
