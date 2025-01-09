@@ -18,12 +18,6 @@ defmodule RoboSoccerPlatform.ConfigUtils do
   def get_robot_config(team) do
     robot_connection_type = System.fetch_env!("#{team}_ROBOT_CONNECTION_TYPE")
 
-    get_robot_config(team, robot_connection_type)
-  end
-
-  @spec get_robot_config(RoboSoccerPlatform.team(), String.t()) ::
-          RoboSoccerPlatform.GameController.robot_config()
-  def get_robot_config(team, robot_connection_type) do
     case robot_connection_type do
       "TCP_SERVER_SOCKET" ->
         connection_config = %{
