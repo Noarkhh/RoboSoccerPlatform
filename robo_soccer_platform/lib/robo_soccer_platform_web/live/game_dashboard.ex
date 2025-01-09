@@ -9,7 +9,7 @@ defmodule RoboSoccerPlatformWeb.GameDashboard do
   alias RoboSoccerPlatformWeb.Endpoint
 
   @game_state "game_state"
-  @game_length 100 * 60
+  @game_length 10 * 60
   @type steering_state :: %{
           player_inputs: %{
             (player_id :: String.t()) => RoboSoccerPlatform.GameController.player_input()
