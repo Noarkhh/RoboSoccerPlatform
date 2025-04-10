@@ -1,0 +1,23 @@
+# ip of the hosting machine
+SERVER_IP=192.168.0.2
+# port of the phoenix app
+PHX_PORT=4000
+# credentials required to access the dashboard
+CONTROLLER_PASSWORD=
+CONTROLLER_USERNAME=
+# wifi credentials
+WIFI_SSID=robo
+WIFI_PSK=roborobo
+# coefficient by which speed of the robots is multiplied
+RED_ROBOT_SPEED_COEFFICIENT=0.75
+GREEN_ROBOT_SPEED_COEFFICIENT=1.0
+# phoenix base for secrets generated with `mix phx.gen.secret`
+SECRET_KEY_BASE=
+# types of robot connection, either `TCP_SERVER_SOCKET` or `BLUETOOTH`
+RED_ROBOT_CONNECTION_TYPE=TCP_SERVER_SOCKET
+GREEN_ROBOT_CONNECTION_TYPE=BLUETOOTH
+# path to serial port of the bluetooth connection
+GREEN_ROBOT_BLUETOOTH_SERIAL_PORT=/dev/rfcomm0
+# port on which the robot will try to connect
+GREEN_ROBOT_SERVER_PORT=20001
+#RED_ROBOT_SERVER_PORT=20000
