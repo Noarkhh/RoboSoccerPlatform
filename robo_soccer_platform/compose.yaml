@@ -1,9 +1,12 @@
 services:
     robo_soccer_platform:
         build: .
+        privileged: true
         ports: 
-            - "4000:4000"
-            - "20000:20000"
-            - "20001:20001"
-        env_file: ".env"
+            - 4000:4000
+            - 20000:20000
+            - 20001:20001
+        volumes:
+            - /dev:/dev
+        env_file: .env
             

@@ -16,9 +16,14 @@ defmodule RoboSoccerPlatform.GameController do
 
   @game_state "game_state"
 
+  @type connection_config ::
+          %{local_port: :inet.port_number()} | %{bluetooth_serial_port: String.t()}
   @type robot_config ::
-          {RobotConnection.TCPServerSocketConnection, %{local_port: :inet.port_number()}}
-          | {RobotConnection.BluetoothConnection, %{bluetooth_serial_port: String.t()}}
+          %{
+            speed_coefficient: float(),
+            connection_module: RobotConnection.t(),
+            connection_config: connection_config()
+          }
   @type option ::
           {:aggregation_interval_ms, pos_integer()}
           | {:aggregation_function_name, atom()}
@@ -33,6 +38,7 @@ defmodule RoboSoccerPlatform.GameController do
     @moduledoc false
     defmodule TeamState do
       @type t :: %__MODULE__{
+              speed_coefficient: float(),
               robot_connection: pid(),
               robot_connection_module: RoboSoccerPlatform.RobotConnection.t(),
               current_instruction: %{x: float(), y: float()},
@@ -40,7 +46,11 @@ defmodule RoboSoccerPlatform.GameController do
               total_cooperation_metric: float()
             }
 
-      @enforce_keys [:robot_connection, :robot_connection_module]
+      @enforce_keys [
+        :robot_connection,
+        :robot_connection_module,
+        :speed_coefficient
+      ]
       defstruct @enforce_keys ++
                   [
                     current_instruction: %{x: 0.0, y: 0.0},
@@ -52,8 +62,8 @@ defmodule RoboSoccerPlatform.GameController do
     alias RoboSoccerPlatform.GameController
 
     @type t :: %__MODULE__{
-            aggregation_interval_ms: pos_integer(),
             cooperation_metric_function: CooperationMetricFunctions.signature(),
+            aggregation_interval_ms: pos_integer(),
             aggregation_function: AggregationFunctions.signature(),
             number_of_aggregations: integer(),
             team_states: %{RoboSoccerPlatform.team() => TeamState.t()},
@@ -69,7 +79,6 @@ defmodule RoboSoccerPlatform.GameController do
       :aggregation_interval_ms,
       :aggregation_function,
       :cooperation_metric_function,
-      :speed_coefficient,
       :room_code,
       :team_states
     ]
@@ -293,13 +302,13 @@ defmodule RoboSoccerPlatform.GameController do
 
         instruction =
           team_player_inputs
-          |> aggregate_player_inputs(state.aggregation_function, state.speed_coefficient)
+          |> aggregate_player_inputs(state.aggregation_function, team_state.speed_coefficient)
 
         current_cooperation_metric =
           team_player_inputs
           |> calculate_cooperation_metric(
             instruction.x,
-            instruction.y / state.speed_coefficient,
+            instruction.y / team_state.speed_coefficient,
             state.cooperation_metric_function
           )
 
@@ -348,18 +357,20 @@ defmodule RoboSoccerPlatform.GameController do
     aggregation_interval_ms = opts[:aggregation_interval_ms]
     aggregation_function_name = opts[:aggregation_function_name]
     cooperation_metric_function_name = opts[:cooperation_metric_function_name]
-    speed_coefficient = opts[:speed_coefficient]
 
     team_states =
       opts
       |> Keyword.fetch!(:robot_configs)
-      |> Map.new(fn {team, {robot_connection_module, robot_connection_config}} ->
-        {:ok, pid} = robot_connection_module.start(team, robot_connection_config)
+      |> Map.new(fn {team, robot_config} ->
+        {:ok, pid} =
+          robot_config.connection_module.start(team, robot_config.connection_config)
+
         Logger.info("Started RobotConnection for team #{team} with pid #{inspect(pid)}")
 
         team_state = %State.TeamState{
+          speed_coefficient: robot_config.speed_coefficient,
           robot_connection: pid,
-          robot_connection_module: robot_connection_module
+          robot_connection_module: robot_config.connection_module
         }
 
         {team, team_state}
@@ -382,7 +393,6 @@ defmodule RoboSoccerPlatform.GameController do
     %State{
       team_states: team_states,
       aggregation_interval_ms: aggregation_interval_ms,
-      speed_coefficient: speed_coefficient,
       room_code: generate_room_code(),
       aggregation_function: aggregation_function,
       cooperation_metric_function: cooperation_metric_function

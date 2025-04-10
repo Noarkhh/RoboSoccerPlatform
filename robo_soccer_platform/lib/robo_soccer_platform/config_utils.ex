@@ -16,22 +16,34 @@ defmodule RoboSoccerPlatform.ConfigUtils do
   @spec get_robot_config(RoboSoccerPlatform.team()) ::
           RoboSoccerPlatform.GameController.robot_config()
   def get_robot_config(team) do
-    robot_connection_type = System.fetch_env!("#{team}_ROBOT_CONNECTION_TYPE")
+    connection_type = System.fetch_env!("#{team}_ROBOT_CONNECTION_TYPE")
 
-    case robot_connection_type do
-      "TCP_SERVER_SOCKET" ->
-        connection_config = %{
-          local_port: System.fetch_env!("#{team}_ROBOT_SERVER_PORT") |> String.to_integer()
-        }
+    speed_coefficient =
+      System.get_env("#{team}_ROBOT_SPEED_COEFFICIENT", "0.5") |> String.to_float()
 
-        {RobotConnection.TCPServerSocketConnection, connection_config}
+    {connection_module, connection_config} =
+      case connection_type do
+        "TCP_SERVER_SOCKET" ->
+          {
+            RobotConnection.TCPServerSocketConnection,
+            %{
+              local_port: System.fetch_env!("#{team}_ROBOT_SERVER_PORT") |> String.to_integer()
+            }
+          }
 
-      "BLUETOOTH" ->
-        connection_config = %{
-          bluetooth_serial_port: System.fetch_env!("#{team}_ROBOT_BLUETOOTH_SERIAL_PORT")
-        }
+        "BLUETOOTH" ->
+          {
+            RobotConnection.BluetoothConnection,
+            %{
+              bluetooth_serial_port: System.fetch_env!("#{team}_ROBOT_BLUETOOTH_SERIAL_PORT")
+            }
+          }
+      end
 
-        {RobotConnection.BluetoothConnection, connection_config}
-    end
+    %{
+      speed_coefficient: speed_coefficient,
+      connection_module: connection_module,
+      connection_config: connection_config
+    }
   end
 end
